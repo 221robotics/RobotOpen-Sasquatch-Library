@@ -30,6 +30,48 @@
 
 
 
+/* GAMEPAD MAPPING */
+#define ANALOG_LEFTX 0x00;
+#define ANALOG_LEFTY 0x01;
+#define ANALOG_RIGHTX 0x02;
+#define ANALOG_RIGHTY 0x03;
+#define LEFT_STICK_BTN 0x04;
+#define RIGHT_STICK_BTN 0x05;
+#define DPAD 0x06;
+#define BTN_1 0x07;
+#define BTN_2 0x08;
+#define BTN_3 0x09;
+#define BTN_4 0x0A;
+#define LEFT_SHOULDER 0x0B;
+#define RIGHT_SHOULDER 0x0C;
+#define LEFT_TRIGGER 0x0D;
+#define RIGHT_TRIGGER 0x0E;
+#define START_BTN 0x0F;
+#define SELECT_BTN 0x10;
+#define AUX_BTN 0x11;
+
+/* MOBILE MAPPING */
+#define ANALOG_LEFTX 0x00;
+#define ANALOG_LEFTY 0x01;
+#define ANALOG_RIGHTX 0x02;
+#define ANALOG_RIGHTY 0x03;
+#define BTN_1 0x04;
+#define BTN_2 0x05;
+#define BTN_3 0x06;
+#define BTN_4 0x07;
+#define BTN_5 0x08;
+#define BTN_6 0x09;
+#define BTN_7 0x0A;
+#define BTN_8 0x0B;
+#define ACCEL_X 0x0C;
+#define ACCEL_Y 0x0D;
+#define ACCEL_Z 0x0E;
+#define GYRO_X 0x0F;
+#define GYRO_Y 0x10;
+#define GYRO_Z 0x11;
+
+
+
 typedef struct {
    unsigned int length;
    unsigned int payloadIndex;
@@ -43,12 +85,22 @@ public:
     
     // Check for fresh data
     static void pollDS();
+
+    // Log data to DS
+    static void log(char *data);
     
     // There is a feedback packet ready to send
     static void outgoingDS();
     
     // Tells us if the robot is enabled
     static boolean enabled();
+
+    // Overloaded calls to publish back data
+    static boolean publishToDS(char *id, boolean val);
+    static boolean publishToDS(char *id, char val);
+    static boolean publishToDS(char *id, int val);
+    static boolean publishToDS(char *id, long val);
+    static boolean publishToDS(char *id, float val);
 
 private:
     // Dumps data back to the DS

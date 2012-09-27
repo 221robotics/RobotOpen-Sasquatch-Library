@@ -12,7 +12,7 @@ struct Frame {
     byte opcode;
     byte mask[4];
     byte length;
-    char data[256];
+    char data[128];
 } frame;
 
 
@@ -159,10 +159,10 @@ bool WebSocket::getFrame() {
         
     frame.opcode = bite & 0xf; // Opcode
     frame.isFinal = bite & 0x80; // Final frame?
-    // Determine length (only accept <= 256 for now)
+    // Determine length (only accept <= 128 for now)
     bite = client.read();
     frame.length = bite & 0x7f; // Length of payload
-    if (frame.length > 256) {
+    if (frame.length > 128) {
         #ifdef DEBUG
             Serial.print("Too big frame to handle. Length: ");
             Serial.println(frame.length);

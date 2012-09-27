@@ -15,8 +15,8 @@ static byte ip[]  = { 10, 0, 0, 22 };
 
 // Store the data here
 static unsigned char _joystick[76];             // Byte array of last valid joystick packet (up to 4 controllers)
-static unsigned char _outgoingPacket[256];      // Data to publish to DS is stored into this array
 static unsigned char _joystickCount = 0;
+static unsigned char _outgoingPacket[256];      // Data to publish to DS is stored into this array
 static unsigned char _outgoingPacketSize = 0;
 
 // Robot specific stuff
@@ -34,7 +34,13 @@ RobotOpenClass RobotOpen;
 
 
 void RobotOpenClass::sendStatusPacket() {
-    // TODO: send the packet
+    // TODO: send the packet ('s')
+    /* protocol_ver
+       controller_state
+       firmware_ver
+       device_id
+       uptime
+    */
 }
 
 void onConnect(WebSocket &socket) {
@@ -53,6 +59,7 @@ void onData(WebSocket &socket, char* dataString, byte frameLength) {
       _lastPacket = millis();
 
       // TODO: parse out control data
+      // 0x00 - gamepad, 0x01 - mobile, 0x02 - custom
       break;
 
     default:
@@ -136,8 +143,38 @@ void RobotOpenClass::outgoingDS() {
     _waitingPacket = true;
 }
 
+void RobotOpenClass::log(char *data) {
+    // TODO: publish to DS ('p')
+}
+
+boolean RobotOpenClass::publishToDS(char *id, boolean val) {
+    return false;
+}
+
+boolean RobotOpenClass::publishToDS(char *id, char val) {
+    return false;
+}
+
+boolean RobotOpenClass::publishToDS(char *id, int val) {
+    return false;
+}
+
+boolean RobotOpenClass::publishToDS(char *id, long val) {
+    return false;
+}
+
+boolean RobotOpenClass::publishToDS(char *id, float val) {
+    return false;
+}
+
 void RobotOpenClass::publishDS() {
-    // TODO: publish DS
+    // TODO: publish DS ('d')
+    /* length
+       type (boolean, char, int, long, float)
+       val1
+       val2
+       id ...
+       ... */
 }
 
 boolean RobotOpenClass::enabled() {
