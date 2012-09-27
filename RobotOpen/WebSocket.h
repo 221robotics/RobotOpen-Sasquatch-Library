@@ -73,6 +73,9 @@ public:
     // Embeds data in frame and sends to client.
     bool send(char *str, byte length);
 
+    // Disconnect user gracefully.
+    void disconnectStream();
+
 private:
     EthernetServer server;
     EthernetClient client;
@@ -92,9 +95,6 @@ private:
     // Reads a frame from client. Returns false if user disconnects, 
     // or unhandled frame is received. Server must then disconnect, or an error occurs.
     bool getFrame();
-
-    // Disconnect user gracefully.
-    void disconnectStream();
 };
 
 #endif

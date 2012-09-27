@@ -8,50 +8,61 @@
 #include <SPI.h>
 #include <Ethernet.h>
 
-  // Here we define a maximum websocket framelength to 64 bytes. Default is 256.
-#define MAX_FRAME_LENGTH 256
-
 //Set the MAC address and static IP for the TCP/IP stack
 static byte mac[] = { 0xD4, 0x40, 0x39, 0xFB, 0xE0, 0x33 };
 static byte ip[]  = { 10, 0, 0, 22 };
 #define WEBSERVER_PORT 80
 
 // Store the data here
-static unsigned char _joystick[256];            // Byte array of last valid joystick packet
+static unsigned char _joystick[76];             // Byte array of last valid joystick packet (up to 4 controllers)
 static unsigned char _outgoingPacket[256];      // Data to publish to DS is stored into this array
-static unsigned char _joystickPacketSize = 0;
+static unsigned char _joystickCount = 0;
 static unsigned char _outgoingPacketSize = 0;
 
 // Robot specific stuff
-static boolean _enabled = false;      // Tells us if the robot is enabled or disabled
+static boolean _enabled = false;        // Tells us if the robot is enabled or disabled
 static boolean _waitingPacket = false;	// There is a driverstation packet in the queue
-static unsigned long _lastUpdate = 0;  // Keeps track of the last time (ms) we received data
-
-static unsigned long _lastMillis = 0;
-
-// General vars
-static IPAddress _remoteIp;          // holds received packet's originating IP
-static unsigned int _remotePort = 0; // holds received packet's originating port
+static unsigned long _lastPacket = 0;   // Keeps track of the last time (ms) we received data
+static unsigned long _lastMillis = 0;   // Keep track of time
 
 // Networking instances
 WebSocket wsServer;
 EthernetServer server(WEBSERVER_PORT);
 
-
 // Class constructor
 RobotOpenClass RobotOpen;
 
 
+void RobotOpenClass::sendStatusPacket() {
+    // TODO: send the packet
+}
+
 void onConnect(WebSocket &socket) {
-  Serial.println("onConnect called");
+  // ready to go
 }
 
 void onData(WebSocket &socket, char* dataString, byte frameLength) {
-  Serial.println("onData called");
+  switch (dataString[0]) {
+    case 'h': // heartbeat
+      _enabled = false;
+      _lastPacket = millis();
+      break;
+
+    case 'c': // control packet
+      _enabled = true;
+      _lastPacket = millis();
+
+      // TODO: parse out control data
+      break;
+
+    default:
+      // ignore the packet
+      break;
+    }
 }
 
 void onDisconnect(WebSocket &socket) {
-  Serial.println("onDisconnect called");
+  _enabled = false;
 }
 
 void RobotOpenClass::begin() {
@@ -80,27 +91,13 @@ void RobotOpenClass::pollDS() {
         while (client.connected()) {
           if (client.available()) {
             char c = client.read();
-            // if you've gotten to the end of the line (received a newline
-            // character) and the line is blank, the http request has ended,
-            // so you can send a reply
             if (c == '\n' && currentLineIsBlank) {
               // send a standard http response header
               client.println("HTTP/1.1 200 OK");
               client.println("Content-Type: text/html");
               client.println("Connnection: close");
               client.println();
-              client.println("<!DOCTYPE HTML>");
-              client.println("<script language=\"javascript\" type=\"text/javascript\">");
-              client.println("function writeToScreen(message) {");
-              client.println("var pre = document.createElement(\"p\");");
-              client.println("pre.style.wordWrap = \"break-word\";");
-              client.println("pre.innerHTML = message;");
-              client.println("document.getElementById(\"output\").appendChild(pre); }");
-              client.println("function socketTest() {");
-              client.println("var socket = new WebSocket(\"ws://10.0.0.22:8000\");");
-              client.println("socket.onmessage = function(evt) { writeToScreen('<span>'+evt.data+'</span>'); }}");
-              client.println("window.addEventListener(\"load\", socketTest, false);</script>");
-              client.println("<h2>WebSocket Test</h2>  <div id=\"output\"></div>  </html>");
+              client.println("<!DOCTYPE HTML><html><h2>Welcome to RobotOpen</h2></html>");
               break;
             }
             if (c == '\n') {
@@ -119,23 +116,19 @@ void RobotOpenClass::pollDS() {
 
     // Should be called for each loop.
     wsServer.listen();
-
-    // Process any data sitting in the buffer
-    // handleData();
   
-    //Only allow robot to be enabled if we've received data in the last 250ms and robot is set to enabled
-    if (((millis() - _lastUpdate) <= 250) && (millis() > 500)) {  //Robot is disabled for first 500ms of runtime
-        _enabled = true;
-	}
-    else {
+    // detect disconnect
+    if ((millis() > 500) && ((millis() - _lastPacket) > 200)) {  //Robot is disabled for first 500ms of runtime
         _enabled = false;
-    }
-
-    if (wsServer.isConnected()) {
-        if (millis() - _lastMillis > 100) {
-            wsServer.send("hello!", 6);
-            _lastMillis = millis();
+        if (wsServer.isConnected()) {
+          wsServer.disconnectStream();
         }
+	  }
+
+    // send out status packets frequently
+    if (wsServer.isConnected() && (millis() - _lastMillis) > 500) {
+      sendStatusPacket();
+      _lastMillis = millis();
     }
 }
 
@@ -144,7 +137,7 @@ void RobotOpenClass::outgoingDS() {
 }
 
 void RobotOpenClass::publishDS() {
-    // publish DS
+    // TODO: publish DS
 }
 
 boolean RobotOpenClass::enabled() {

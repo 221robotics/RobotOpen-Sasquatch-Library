@@ -53,6 +53,8 @@ public:
 private:
     // Dumps data back to the DS
     static void publishDS();
+
+    static void sendStatusPacket();
 };
 
 extern RobotOpenClass RobotOpen;

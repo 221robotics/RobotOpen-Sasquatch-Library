@@ -4,13 +4,15 @@
 
 //#define DEBUG
 
+#define ROBOTOPEN_WEBSOCKET_PROTOCOL    "ro1"
+
 struct Frame {
     bool isMasked;
     bool isFinal;
     byte opcode;
     byte mask[4];
     byte length;
-    char data[64];
+    char data[256];
 } frame;
 
 
@@ -68,6 +70,7 @@ void WebSocket::disconnectStream() {
     client.flush();
     delay(1);
     client.stop();
+    state = DISCONNECTED;
 }
 
 
@@ -79,6 +82,7 @@ bool WebSocket::doHandshake() {
     bool hasUpgrade = false;
     bool hasConnection = false;
     bool isSupportedVersion = false;
+    bool correctProtocol = false;
     bool hasHost = false;
     bool hasOrigin = false;
     bool hasKey = false;
@@ -113,6 +117,11 @@ bool WebSocket::doHandshake() {
             } else if (!isSupportedVersion && strstr(temp, "Sec-WebSocket-Version: ") && strstr(temp, "13")) {
                 isSupportedVersion = true;
             }
+            } else if (!correctProtocol && strstr(temp, "Sec-WebSocket-Protocol: ") && strstr(temp, ROBOTOPEN_WEBSOCKET_PROTOCOL)) {
+                correctProtocol = true;
+            }
+
+            
             
             counter = 0; // Start saving new header string
         }
@@ -120,7 +129,7 @@ bool WebSocket::doHandshake() {
 
     // Assert that we have all headers that are needed. If so, go ahead and
     // send response headers.
-    if (hasUpgrade && hasConnection && isSupportedVersion && hasHost && hasOrigin && hasKey) {
+    if (hasUpgrade && hasConnection && isSupportedVersion && hasHost && hasOrigin && hasKey && correctProtocol) {
         strcat(key, "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"); // Add the omni-valid GUID
         Sha1.init();
         Sha1.print(key);
@@ -150,10 +159,10 @@ bool WebSocket::getFrame() {
         
     frame.opcode = bite & 0xf; // Opcode
     frame.isFinal = bite & 0x80; // Final frame?
-    // Determine length (only accept <= 64 for now)
+    // Determine length (only accept <= 256 for now)
     bite = client.read();
     frame.length = bite & 0x7f; // Length of payload
-    if (frame.length > 64) {
+    if (frame.length > 256) {
         #ifdef DEBUG
             Serial.print("Too big frame to handle. Length: ");
             Serial.println(frame.length);
@@ -199,7 +208,12 @@ bool WebSocket::getFrame() {
     }
 
     switch (frame.opcode) {
-        case 0x01: // Txt frame
+        /*case 0x01: // Txt frame
+            // Call the user provided function
+            if (onData)
+                onData(*this, frame.data, frame.length);
+            break;*/
+        case 0x02: // Binary frame
             // Call the user provided function
             if (onData)
                 onData(*this, frame.data, frame.length);
