@@ -50,7 +50,7 @@ http://datatracker.ietf.org/doc/rfc6455/?include_text=1
 class WebSocket {
 public:
     // Constructor.
-    WebSocket(const char *urlPrefix = "/", int inPort = 80);
+    WebSocket(const char *urlPrefix = "/", int inPort = 8000);
     
     // Callback functions definition.
     typedef void DataCallback(WebSocket &socket, char* socketString, byte frameLength);
