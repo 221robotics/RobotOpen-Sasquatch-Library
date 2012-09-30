@@ -12,7 +12,7 @@ struct Frame {
     byte opcode;
     byte mask[4];
     byte length;
-    char data[128];
+    char data[80];
 } frame;
 
 
@@ -116,7 +116,6 @@ bool WebSocket::doHandshake() {
                 strcpy(key, strtok(NULL, " "));
             } else if (!isSupportedVersion && strstr(temp, "Sec-WebSocket-Version: ") && strstr(temp, "13")) {
                 isSupportedVersion = true;
-            }
             } else if (!correctProtocol && strstr(temp, "Sec-WebSocket-Protocol: ") && strstr(temp, ROBOTOPEN_WEBSOCKET_PROTOCOL)) {
                 correctProtocol = true;
             }
@@ -159,10 +158,10 @@ bool WebSocket::getFrame() {
         
     frame.opcode = bite & 0xf; // Opcode
     frame.isFinal = bite & 0x80; // Final frame?
-    // Determine length (only accept <= 128 for now)
+    // Determine length (only accept <= 80 for now)
     bite = client.read();
     frame.length = bite & 0x7f; // Length of payload
-    if (frame.length > 128) {
+    if (frame.length > 80) {
         #ifdef DEBUG
             Serial.print("Too big frame to handle. Length: ");
             Serial.println(frame.length);
@@ -253,7 +252,7 @@ void WebSocket::registerDisconnectCallback(Callback *callback) {
 
 bool WebSocket::send(char *data, byte length) {
 	if (state == CONNECTED) {
-        server.write((uint8_t) 0x81); // Txt frame opcode
+        server.write((uint8_t) 0x82); // Binary frame opcode
         server.write((uint8_t) length); // Length of data
         for (int i = 0; i < length ; i++) {
             server.write(data[i]);

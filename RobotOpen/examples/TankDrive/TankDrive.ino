@@ -4,7 +4,7 @@
 
 
 /* I/O Setup */
-USBJoystick usb1('0');  // Assign the logitech USBJoystick object to bundle 0
+//USBJoystick usb1('0');  // Assign the logitech USBJoystick object to bundle 0
 
 
 void setup()
@@ -52,11 +52,10 @@ void timedtasks() {
  * There's no need to touch anything here!!!
  */
 void loop() {
-  RobotOpen.pollDS();
+  RobotOpen.syncDS();
   if (RobotOpen.enabled())
     enabled();
   else
     disabled();
   timedtasks();
-  RobotOpen.outgoingDS();
 }

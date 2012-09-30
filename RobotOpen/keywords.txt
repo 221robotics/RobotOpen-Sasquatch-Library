@@ -1,22 +1,11 @@
 RobotOpen	KEYWORD1
-USBJoystick KEYWORD1
 begin	KEYWORD2
-pollDS  KEYWORD2
-outgoingDS  KEYWORD2
-setPWM  KEYWORD2
-setSolenoid  KEYWORD2
+syncDS  KEYWORD2
+log  KEYWORD2
 enabled KEYWORD2
-getBundleSize    KEYWORD2
-getComponent    KEYWORD2
-publishAnalog   KEYWORD2
-publishDigital  KEYWORD2
-publishByte KEYWORD2
-publishInt    KEYWORD2
-publishLong KEYWORD2
-getIndex    KEYWORD2
-makePWM  KEYWORD2
-getBtn  KEYWORD2
-getDpad  KEYWORD2
+numJoysticks    KEYWORD2
+publishToDS    KEYWORD2
+getJoystick  KEYWORD2
 INVERT  LITERAL1
 NORMAL  LITERAL1
 
