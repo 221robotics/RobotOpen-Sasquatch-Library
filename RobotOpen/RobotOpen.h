@@ -8,6 +8,7 @@
 
 #include "Arduino.h"
 #include <WebSocket.h>
+#include <ROJoystick.h>
 
 // Solenoid Constants
 #define ON 0xFF
@@ -33,11 +34,11 @@ public:
     static int numJoysticks();
 
     // Overloaded calls to publish back data
-    static boolean publishToDS(String id, boolean val);
-    static boolean publishToDS(String id, char val);
-    static boolean publishToDS(String id, int val);
-    static boolean publishToDS(String id, long val);
-    static boolean publishToDS(String id, float val);
+    static boolean publish(String id, boolean val);
+    static boolean publish(String id, char val);
+    static boolean publish(String id, int val);
+    static boolean publish(String id, long val);
+    static boolean publish(String id, float val);
 
     static char* getJoystick(char index);
 

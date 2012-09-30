@@ -1,4 +1,6 @@
 RobotOpen	KEYWORD1
+ROJoystick	KEYWORD1
+getComponent	KEYWORD2
 begin	KEYWORD2
 syncDS  KEYWORD2
 log  KEYWORD2

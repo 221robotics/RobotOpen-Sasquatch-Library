@@ -56,7 +56,7 @@ public:
     typedef void DataCallback(WebSocket &socket, char* socketString, byte frameLength);
     typedef void Callback(WebSocket &socket);
     
-    // Start tlistening for connections.
+    // Start listening for connections.
     void begin();
     
     // Main listener for incoming data. Should be called from the loop.
@@ -71,7 +71,9 @@ public:
 	bool isConnected();
 	
     // Embeds data in frame and sends to client.
-    bool send(char *str, byte length);
+    bool sendText(char *str, byte length);
+    bool sendBinary(char *str, byte length);
+    bool send(char *str, byte length, byte opcode);
 
     // Disconnect user gracefully.
     void disconnectStream();

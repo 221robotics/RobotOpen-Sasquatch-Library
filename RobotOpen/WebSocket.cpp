@@ -250,19 +250,29 @@ void WebSocket::registerDisconnectCallback(Callback *callback) {
 }
 
 
-bool WebSocket::send(char *data, byte length) {
-	if (state == CONNECTED) {
-        server.write((uint8_t) 0x82); // Binary frame opcode
+bool WebSocket::sendText(char *data, byte length) {
+    send(data, length, 0x81);
+}
+
+
+bool WebSocket::sendBinary(char *data, byte length) {
+	send(data, length, 0x82);
+}
+
+
+bool WebSocket::send(char *data, byte length, byte opcode) {
+    if (state == CONNECTED) {
+        server.write((uint8_t) opcode); // Binary frame opcode
         server.write((uint8_t) length); // Length of data
         for (int i = 0; i < length ; i++) {
             server.write(data[i]);
         }
-		delay(1);
+        delay(1);
         return true;
     }
 #ifdef DEBUG
     Serial.println("No connection to client, no data sent.");
 #endif
-	
+    
     return false;
 }

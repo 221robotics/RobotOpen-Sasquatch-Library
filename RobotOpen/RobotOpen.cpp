@@ -41,27 +41,6 @@ EthernetServer server(WEBSERVER_PORT);
 RobotOpenClass RobotOpen;
 
 
-void RobotOpenClass::sendStatusPacket() {
-    char sPacket[6];
-    sPacket[0] = 's';               // status packet
-    sPacket[1] = PROTOCOL_VERSION;  // robotopen protocol version
-
-    if (_enabled)                   // robot enable state
-        sPacket[2] = 0xFF;
-    else
-        sPacket[2] = 0x00;
-
-    sPacket[3] = FIRMWARE_VERSION;  // User configured firmware version
-    sPacket[4] = DEVICE_ID;         // Device ID of the hardware this is running on
-
-    unsigned int uptime = (millis()/1000/60);
-    if (uptime > 255)
-        uptime = 255;
-
-    sPacket[5] = (unsigned char)(uptime & 0xFF); // uptime in minutes (maxes out at 255)
-
-    wsServer.send(sPacket, 6);
-}
 
 void onConnect(WebSocket &socket) {
   // ready to go
@@ -80,7 +59,11 @@ void onData(WebSocket &socket, char* dataString, byte frameLength) {
       int i;
 
       // parse out control data
-      if (frameLength > 1) {
+      if (frameLength <= 1) {
+          _total_joysticks = 0;
+          break;
+      }
+      else {
           for (i = 0; i < 18; i++) {
               _joy1[i] = dataString[i+1];
           }
@@ -92,11 +75,17 @@ void onData(WebSocket &socket, char* dataString, byte frameLength) {
           }
           _total_joysticks = 2;
       }
+      else {
+          break;
+      }
       if (frameLength > 37) {
           for (i = 0; i < 18; i++) {
               _joy3[i] = dataString[i+37];
           }
           _total_joysticks = 3;
+      }
+      else {
+          break;
       }
       if (frameLength > 55) {
           for (i = 0; i < 18; i++) {
@@ -128,12 +117,13 @@ void RobotOpenClass::begin() {
     // fire up the webserver
     server.begin();
 
-    Serial.begin(115200);	// This is used to talk to the coprocessor on the RobotOpen shield
+    // setup serial for debugging
+    Serial.begin(115200);
 
     // setup packets
     _outgoingPacket[0] = 'd';
 
-    delay(100); // Give Ethernet time to get ready
+    delay(250); // Give Ethernet time to get ready
 }
 
 void RobotOpenClass::syncDS() {
@@ -172,7 +162,7 @@ void RobotOpenClass::syncDS() {
     wsServer.listen();
   
     // detect disconnect
-    if ((millis() > 500) && ((millis() - _lastPacket) > 200)) {  //Robot is disabled for first 500ms of runtime
+    if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
         _enabled = false;
         if (wsServer.isConnected()) {
           wsServer.disconnectStream();
@@ -181,9 +171,9 @@ void RobotOpenClass::syncDS() {
 
     // send out status/DS packets frequently
     if (wsServer.isConnected() && (millis() - _lastXmit) > 100) {
-      sendStatusPacket();
-      publishDS();
-      _lastXmit = millis();
+        sendStatusPacket();
+        publishDS();
+        _lastXmit = millis();
     }
 }
 
@@ -196,17 +186,39 @@ void RobotOpenClass::log(String data) {
         logData[i+1] = data[i];
     }
 
-    wsServer.send(logData, dataLength+1);
+    wsServer.sendText(logData, dataLength+1);
 }
 
-boolean RobotOpenClass::publishToDS(String id, boolean val) {
+void RobotOpenClass::sendStatusPacket() {
+    char sPacket[6];
+    sPacket[0] = 's';               // status packet
+    sPacket[1] = PROTOCOL_VERSION;  // robotopen protocol version
+
+    if (_enabled)                   // robot enable state
+        sPacket[2] = 0xFF;
+    else
+        sPacket[2] = 0x00;
+
+    sPacket[3] = FIRMWARE_VERSION;  // User configured firmware version
+    sPacket[4] = DEVICE_ID;         // Device ID of the hardware this is running on
+
+    unsigned int uptime = (millis()/1000/60);
+    if (uptime > 255)
+        uptime = 255;
+
+    sPacket[5] = (unsigned char)(uptime & 0xFF); // uptime in minutes (maxes out at 255)
+
+    wsServer.sendBinary(sPacket, 6);
+}
+
+boolean RobotOpenClass::publish(String id, boolean val) {
     if (_outgoingPacketSize+3+id.length() <= 256) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'b'; // type
         if (val == 0)
             _outgoingPacket[_outgoingPacketSize++] = 0;  // value
         else
-            _outgoingPacket[_outgoingPacketSize++] = 1;
+            _outgoingPacket[_outgoingPacketSize++] = 0xFF;
         for (int i = 0; i < id.length(); i++) {
             _outgoingPacket[_outgoingPacketSize++] = id[i];   // identifier
         }
@@ -216,7 +228,7 @@ boolean RobotOpenClass::publishToDS(String id, boolean val) {
     return false;
 }
 
-boolean RobotOpenClass::publishToDS(String id, char val) {
+boolean RobotOpenClass::publish(String id, char val) {
     if (_outgoingPacketSize+3+id.length() <= 256) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'c'; // type
@@ -230,7 +242,7 @@ boolean RobotOpenClass::publishToDS(String id, char val) {
     return false;
 }
 
-boolean RobotOpenClass::publishToDS(String id, int val) {
+boolean RobotOpenClass::publish(String id, int val) {
     if (_outgoingPacketSize+4+id.length() <= 256) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (4+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'i'; // type
@@ -245,7 +257,7 @@ boolean RobotOpenClass::publishToDS(String id, int val) {
     return false;
 }
 
-boolean RobotOpenClass::publishToDS(String id, long val) {
+boolean RobotOpenClass::publish(String id, long val) {
     if (_outgoingPacketSize+6+id.length() <= 256) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (6+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'l'; // type
@@ -262,14 +274,15 @@ boolean RobotOpenClass::publishToDS(String id, long val) {
     return false;
 }
 
-boolean RobotOpenClass::publishToDS(String id, float val) {
+boolean RobotOpenClass::publish(String id, float val) {
     if (_outgoingPacketSize+6+id.length() <= 256) {
+        long conVal = (long)val;
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (6+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'f'; // type
-        _outgoingPacket[_outgoingPacketSize++] = ((long)val >> 24) & 0xFF;  // value
-        _outgoingPacket[_outgoingPacketSize++] = ((long)val >> 16) & 0xFF;  // value
-        _outgoingPacket[_outgoingPacketSize++] = ((long)val >> 8) & 0xFF;  // value
-        _outgoingPacket[_outgoingPacketSize++] = (long)val & 0xFF;  // value
+        _outgoingPacket[_outgoingPacketSize++] = (conVal >> 24) & 0xFF;  // value
+        _outgoingPacket[_outgoingPacketSize++] = (conVal >> 16) & 0xFF;  // value
+        _outgoingPacket[_outgoingPacketSize++] = (conVal >> 8) & 0xFF;  // value
+        _outgoingPacket[_outgoingPacketSize++] = conVal & 0xFF;  // value
         for (int i = 0; i < id.length(); i++) {
             _outgoingPacket[_outgoingPacketSize++] = id[i];   // identifier
         }
@@ -279,21 +292,21 @@ boolean RobotOpenClass::publishToDS(String id, float val) {
     return false;
 }
 
-char* getJoystick(char index) {
+char* RobotOpenClass::getJoystick(char index) {
     if (index == 1 && _total_joysticks > 0)
         return _joy1;
-    if (index == 2 && _total_joysticks > 1)
+    else if (index == 2 && _total_joysticks > 1)
         return _joy2;
-    if (index == 3 && _total_joysticks > 2)
+    else if (index == 3 && _total_joysticks > 2)
         return _joy3;
-    if (index == 4 && _total_joysticks > 3)
+    else if (index == 4 && _total_joysticks > 3)
         return _joy4;
     else
         return 0;
 }
 
 void RobotOpenClass::publishDS() {
-    wsServer.send(_outgoingPacket, _outgoingPacketSize);
+    wsServer.sendBinary(_outgoingPacket, _outgoingPacketSize);
     _outgoingPacketSize = 1;
 }
 
