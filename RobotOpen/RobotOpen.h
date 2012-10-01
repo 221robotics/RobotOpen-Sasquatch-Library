@@ -14,12 +14,13 @@
 #define ON 0xFF
 #define OFF 0x00
 
+typedef void LoopCallback();
 
 
 class RobotOpenClass {
 public:
     // Fire up the RobotOpen object and get things running
-    static void begin();
+    static void begin(LoopCallback *enabledCallback, LoopCallback *disabledCallback, LoopCallback *timedtasksCallback);
     
     // Exchange data with DS
     static void syncDS();

@@ -24,6 +24,11 @@ static char _joy2[18];
 static char _joy3[18];
 static char _joy4[18];
 
+// Pointers to loop callbacks
+static LoopCallback *whileEnabled;
+static LoopCallback *whileDisabled;
+static LoopCallback *whileTimedTasks;
+
 // Hold DS data
 static char _outgoingPacket[256];      // Data to publish to DS is stored into this array
 static unsigned char _outgoingPacketSize = 1;
@@ -43,7 +48,7 @@ RobotOpenClass RobotOpen;
 
 
 void onConnect(WebSocket &socket) {
-  // ready to go
+    _lastXmit = millis();
 }
 
 void onData(WebSocket &socket, char* dataString, byte frameLength) {
@@ -105,7 +110,12 @@ void onDisconnect(WebSocket &socket) {
     _enabled = false;
 }
 
-void RobotOpenClass::begin() {
+void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabledCallback, LoopCallback *timedtasksCallback) {
+    // Setup callbacks
+    whileEnabled = enabledCallback;
+    whileDisabled = disabledCallback;
+    whileTimedTasks = timedtasksCallback;
+
     // Start Ethernet, UDP, and Serial
     Ethernet.begin(mac,ip);
     
@@ -175,6 +185,14 @@ void RobotOpenClass::syncDS() {
         publishDS();
         _lastXmit = millis();
     }
+
+    // Run user provided loops
+    if (_enabled && whileEnabled)
+        whileEnabled();
+    if (!_enabled && whileDisabled)
+        whileDisabled();
+    if (whileTimedTasks)
+        whileTimedTasks();
 }
 
 void RobotOpenClass::log(String data) {

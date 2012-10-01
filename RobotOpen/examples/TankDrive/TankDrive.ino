@@ -3,14 +3,14 @@
 #include <RobotOpen.h>
 
 
-/* I/O Setup */
+/* DS Joystick Setup */
 ROJoystick usb1(1);
 
 
 void setup()
 {
   /* Initiate comms */
-  RobotOpen.begin();
+  RobotOpen.begin(&enabled, &disabled, &timedtasks);
 }
 
 
@@ -35,18 +35,11 @@ void disabled() {
  * This is also a good spot to put driver station publish code
  */
 void timedtasks() {
-    RobotOpen.publish("theanswer", 42);
+  RobotOpen.publish("theanswer", 42);
 }
 
 
-/* This is the main program loop that keeps comms operational
- * There's no need to touch anything here!!!
- */
+// !!! DO NOT MODIFY !!!
 void loop() {
   RobotOpen.syncDS();
-  if (RobotOpen.enabled())
-    enabled();
-  else
-    disabled();
-  timedtasks();
 }
