@@ -30,7 +30,8 @@ static LoopCallback *whileDisabled;
 static LoopCallback *whileTimedTasks;
 
 // Hold DS data
-static char _outgoingPacket[256];      // Data to publish to DS is stored into this array
+static boolean _dashboardPacketQueued = false;
+static char _outgoingPacket[125];      // Data to publish to DS is stored into this array
 static unsigned char _outgoingPacketSize = 1;
 
 // Robot specific stuff
@@ -48,7 +49,7 @@ RobotOpenClass RobotOpen;
 
 
 void onConnect(WebSocket &socket) {
-    _lastXmit = millis();
+    _lastPacket = millis();
 }
 
 void onData(WebSocket &socket, char* dataString, byte frameLength) {
@@ -179,13 +180,6 @@ void RobotOpenClass::syncDS() {
         }
 	  }
 
-    // send out status/DS packets frequently
-    if (wsServer.isConnected() && (millis() - _lastXmit) > 100) {
-        sendStatusPacket();
-        publishDS();
-        _lastXmit = millis();
-    }
-
     // Run user provided loops
     if (_enabled && whileEnabled)
         whileEnabled();
@@ -193,18 +187,28 @@ void RobotOpenClass::syncDS() {
         whileDisabled();
     if (whileTimedTasks)
         whileTimedTasks();
+
+    // ensure we only accept values for the DS packet for one loop
+    _dashboardPacketQueued = true;
+
+    // send out status/DS packets frequently
+    if (wsServer.isConnected() && (millis() - _lastXmit) > 100) {
+        sendStatusPacket();
+        publishDS();
+        _dashboardPacketQueued = false;
+        _lastXmit = millis();
+    }
 }
 
 void RobotOpenClass::log(String data) {
     int dataLength = data.length();
+    char logData[dataLength];
 
-    char logData[dataLength+1];
-    logData[0] = 'p';
     for (int i=0; i < dataLength; i++) {
-        logData[i+1] = data[i];
+        logData[i] = data[i];
     }
 
-    wsServer.sendText(logData, dataLength+1);
+    wsServer.sendText(logData, dataLength);
 }
 
 void RobotOpenClass::sendStatusPacket() {
@@ -230,7 +234,7 @@ void RobotOpenClass::sendStatusPacket() {
 }
 
 boolean RobotOpenClass::publish(String id, boolean val) {
-    if (_outgoingPacketSize+3+id.length() <= 256) {
+    if (_outgoingPacketSize+3+id.length() <= 125 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'b'; // type
         if (val == 0)
@@ -247,7 +251,7 @@ boolean RobotOpenClass::publish(String id, boolean val) {
 }
 
 boolean RobotOpenClass::publish(String id, char val) {
-    if (_outgoingPacketSize+3+id.length() <= 256) {
+    if (_outgoingPacketSize+3+id.length() <= 125 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'c'; // type
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & val;  // value
@@ -261,7 +265,7 @@ boolean RobotOpenClass::publish(String id, char val) {
 }
 
 boolean RobotOpenClass::publish(String id, int val) {
-    if (_outgoingPacketSize+4+id.length() <= 256) {
+    if (_outgoingPacketSize+4+id.length() <= 125 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (4+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'i'; // type
         _outgoingPacket[_outgoingPacketSize++] = (val >> 8) & 0xFF;  // value
@@ -276,7 +280,7 @@ boolean RobotOpenClass::publish(String id, int val) {
 }
 
 boolean RobotOpenClass::publish(String id, long val) {
-    if (_outgoingPacketSize+6+id.length() <= 256) {
+    if (_outgoingPacketSize+6+id.length() <= 125 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (6+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'l'; // type
         _outgoingPacket[_outgoingPacketSize++] = (val >> 24) & 0xFF;  // value
@@ -293,7 +297,7 @@ boolean RobotOpenClass::publish(String id, long val) {
 }
 
 boolean RobotOpenClass::publish(String id, float val) {
-    if (_outgoingPacketSize+6+id.length() <= 256) {
+    if (_outgoingPacketSize+6+id.length() <= 125 && !_dashboardPacketQueued) {
         long conVal = (long)val;
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (6+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'f'; // type

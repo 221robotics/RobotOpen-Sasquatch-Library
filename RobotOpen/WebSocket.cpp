@@ -18,7 +18,6 @@ struct Frame {
 
 WebSocket::WebSocket(const char *urlPrefix, int inPort) :
     server(inPort),
-//    client(255),
     socket_urlPrefix(urlPrefix)
 {
     state = DISCONNECTED;
@@ -46,11 +45,7 @@ void WebSocket::listen() {
             } else {
                 if (getFrame() == false) {
                     // Got unhandled frame, disconnect
-	            	#ifdef DEBUG
-	                	Serial.println("Disconnecting");
-	            	#endif
                     disconnectStream();
-                    state = DISCONNECTED;
                     if (onDisconnect) {
                         onDisconnect(*this);
                     }
@@ -67,6 +62,14 @@ bool WebSocket::isConnected() {
 
 
 void WebSocket::disconnectStream() {
+    #ifdef DEBUG
+        Serial.println("Disconnecting");
+    #endif
+    server.write((uint8_t) 0x88);
+    server.write((uint8_t) 0x02);
+    server.write((uint8_t) 0x03);
+    server.write((uint8_t) 0xe8);
+    delay(1);
     client.flush();
     delay(1);
     client.stop();
@@ -120,8 +123,6 @@ bool WebSocket::doHandshake() {
                 correctProtocol = true;
             }
 
-            
-            
             counter = 0; // Start saving new header string
         }
     }
@@ -166,10 +167,6 @@ bool WebSocket::getFrame() {
             Serial.print("Too big frame to handle. Length: ");
             Serial.println(frame.length);
         #endif
-        client.write((uint8_t) 0x08);
-        client.write((uint8_t) 0x02);
-        client.write((uint8_t) 0x03);
-        client.write((uint8_t) 0xf1);
         return false;
     }
     // Client should always send mask, but check just to be sure
@@ -199,19 +196,15 @@ bool WebSocket::getFrame() {
         #ifdef DEBUG
             Serial.println("Non-final frame, doesn't handle that.");
         #endif
-        client.print((uint8_t) 0x08);
-        client.write((uint8_t) 0x02);
-        client.write((uint8_t) 0x03);
-        client.write((uint8_t) 0xf1);
         return false;
     }
 
     switch (frame.opcode) {
-        /*case 0x01: // Txt frame
+        case 0x01: // Txt frame
             // Call the user provided function
             if (onData)
                 onData(*this, frame.data, frame.length);
-            break;*/
+            break;
         case 0x02: // Binary frame
             // Call the user provided function
             if (onData)
