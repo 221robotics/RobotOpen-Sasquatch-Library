@@ -15,7 +15,7 @@
 
 //Set the MAC address and static IP for the TCP/IP stack
 static byte mac[] = { 0xD4, 0x40, 0x39, 0xFB, 0xE0, 0x33 };
-static byte ip[]  = { 192, 168, 1, 22 };
+static byte ip[]  = { 10, 0, 0, 22 };
 #define WEBSERVER_PORT 80
 
 static int _total_joysticks = 0;
