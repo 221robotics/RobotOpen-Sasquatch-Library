@@ -31,7 +31,7 @@ static LoopCallback *whileTimedTasks;
 
 // Hold DS data
 static boolean _dashboardPacketQueued = false;
-static char _outgoingPacket[125];      // Data to publish to DS is stored into this array
+static char _outgoingPacket[255];      // Data to publish to DS is stored into this array
 static unsigned char _outgoingPacketSize = 1;
 
 // Robot specific stuff
@@ -64,47 +64,35 @@ void onData(WebSocket &socket, char* dataString, byte frameLength) {
       _lastPacket = millis();
       int i;
 
-      // parse out control data
-      if (frameLength <= 1) {
-          _total_joysticks = 0;
-          break;
-      }
-      else {
-          for (i = 0; i < 18; i++) {
-              _joy1[i] = dataString[i+1];
-          }
-          _total_joysticks = 1;
-      }
-      if (frameLength > 19) {
-          for (i = 0; i < 18; i++) {
-              _joy2[i] = dataString[i+19];
-          }
-          _total_joysticks = 2;
-      }
-      else {
-          break;
-      }
-      if (frameLength > 37) {
-          for (i = 0; i < 18; i++) {
-              _joy3[i] = dataString[i+37];
-          }
-          _total_joysticks = 3;
-      }
-      else {
-          break;
-      }
-      if (frameLength > 55) {
-          for (i = 0; i < 18; i++) {
-              _joy4[i] = dataString[i+55];
-          }
-          _total_joysticks = 4;
+      _total_joysticks = (int)(frameLength/18);
+
+      for (i = 0; i < frameLength; i++) {
+        if (i >= 1 && i < 19) {
+            // 1st joystick
+            _joy1[i-1] = dataString[i];
+        }
+        else if (i >= 19 && i < 37) {
+            // 2nd joystick
+            _joy1[i-19] = dataString[i];
+        }
+        else if (i >= 37 && i < 55) {
+            // 3rd joystick
+            _joy1[i-37] = dataString[i];
+        }
+        else if (i >= 55 && i < 73) {
+            // 4th joystick
+            _joy1[i-55] = dataString[i];
+        }
+        else {
+            break;
+        }      
       }
       break;
 
     default:
       // ignore the packet
       break;
-    }
+  }
 }
 
 void onDisconnect(WebSocket &socket) {
@@ -234,7 +222,7 @@ void RobotOpenClass::sendStatusPacket() {
 }
 
 boolean RobotOpenClass::publish(String id, boolean val) {
-    if (_outgoingPacketSize+3+id.length() <= 125 && !_dashboardPacketQueued) {
+    if (_outgoingPacketSize+3+id.length() <= 255 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'b'; // type
         if (val == 0)
@@ -251,7 +239,7 @@ boolean RobotOpenClass::publish(String id, boolean val) {
 }
 
 boolean RobotOpenClass::publish(String id, char val) {
-    if (_outgoingPacketSize+3+id.length() <= 125 && !_dashboardPacketQueued) {
+    if (_outgoingPacketSize+3+id.length() <= 255 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'c'; // type
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & val;  // value
@@ -265,7 +253,7 @@ boolean RobotOpenClass::publish(String id, char val) {
 }
 
 boolean RobotOpenClass::publish(String id, int val) {
-    if (_outgoingPacketSize+4+id.length() <= 125 && !_dashboardPacketQueued) {
+    if (_outgoingPacketSize+4+id.length() <= 255 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (4+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'i'; // type
         _outgoingPacket[_outgoingPacketSize++] = (val >> 8) & 0xFF;  // value
@@ -280,7 +268,7 @@ boolean RobotOpenClass::publish(String id, int val) {
 }
 
 boolean RobotOpenClass::publish(String id, long val) {
-    if (_outgoingPacketSize+6+id.length() <= 125 && !_dashboardPacketQueued) {
+    if (_outgoingPacketSize+6+id.length() <= 255 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (6+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'l'; // type
         _outgoingPacket[_outgoingPacketSize++] = (val >> 24) & 0xFF;  // value
@@ -297,7 +285,7 @@ boolean RobotOpenClass::publish(String id, long val) {
 }
 
 boolean RobotOpenClass::publish(String id, float val) {
-    if (_outgoingPacketSize+6+id.length() <= 125 && !_dashboardPacketQueued) {
+    if (_outgoingPacketSize+6+id.length() <= 255 && !_dashboardPacketQueued) {
         long conVal = (long)val;
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (6+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'f'; // type

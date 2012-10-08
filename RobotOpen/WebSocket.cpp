@@ -256,7 +256,14 @@ bool WebSocket::sendBinary(char *data, byte length) {
 bool WebSocket::send(char *data, byte length, byte opcode) {
     if (state == CONNECTED) {
         server.write((uint8_t) opcode); // Binary frame opcode
-        server.write((uint8_t) length); // Length of data
+        if (length < 126)
+            server.write((uint8_t) length); // Length of data
+        else {
+            // if frame is larger than 125 bytes
+            server.write((uint8_t) 0x7E);
+            server.write((uint8_t) 0x00);
+            server.write((uint8_t) length);
+        }
         for (int i = 0; i < length ; i++) {
             server.write(data[i]);
         }
