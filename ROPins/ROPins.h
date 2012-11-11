@@ -125,9 +125,9 @@ static inline __attribute__((always_inline))
 #define		PWM10		46
 #define		PWM11		45
 #define		PWM12		44
-#define		INT0		E,4
-#define		INT1		E,5
-#define		INT2		E,6
-#define		INT3		E,7
-#define		INT4		D,2
-#define		INT5		D,3
+#define		INT0		E,4  // arduino 2
+#define		INT1		E,5  // arduino 3
+#define		INT2		E,6  // not mapped (replace 21)
+#define		INT3		E,7  // not mapped (replace 20)
+#define		INT4		D,2  // arduino 19
+#define		INT5		D,3  // arduino 18
