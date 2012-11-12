@@ -1,0 +1,20 @@
+##############################################################
+
+pk.name=Powder Keg
+
+pk.upload.protocol=stk500v2
+pk.upload.maximum_size=258048
+pk.upload.speed=115200
+
+pk.bootloader.low_fuses=0xFF
+pk.bootloader.high_fuses=0xD8
+pk.bootloader.extended_fuses=0xFD
+pk.bootloader.path=stk500v2
+pk.bootloader.file=stk500boot_v2_mega2560.hex
+pk.bootloader.unlock_bits=0x3F
+pk.bootloader.lock_bits=0x0F
+
+pk.build.mcu=atmega2560
+pk.build.f_cpu=16000000L
+pk.build.core=arduino
+pk.build.variant=powderkeg

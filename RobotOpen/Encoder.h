@@ -27,27 +27,26 @@
 #ifndef Encoder_h_
 #define Encoder_h_
 
-#if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
-#elif defined(WIRING)
-#include "Wiring.h"
-#else
-#include "WProgram.h"
-#include "pins_arduino.h"
-#endif
 
-#include "util/direct_pin_read.h"
+#define IO_REG_TYPE uint8_t
+#define PIN_TO_BASEREG(pin)             (portInputRegister(digitalPinToPort(pin)))
+#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
+#define DIRECT_PIN_READ(base, mask)     (((*(base)) & (mask)) ? 1 : 0)
 
-#if defined(ENCODER_USE_INTERRUPTS) || !defined(ENCODER_DO_NOT_USE_INTERRUPTS)
 #define ENCODER_USE_INTERRUPTS
 #define ENCODER_ARGLIST_SIZE CORE_NUM_INTERRUPT
-#include "util/interrupt_pins.h"
-#ifdef ENCODER_OPTIMIZE_INTERRUPTS
-#include "util/interrupt_config.h"
-#endif
-#else
-#define ENCODER_ARGLIST_SIZE 0
-#endif
+
+// Powder Keg
+#define CORE_NUM_INTERRUPT	8
+#define CORE_INT0_PIN		19
+#define CORE_INT1_PIN		22
+#define CORE_INT2_PIN		21
+#define CORE_INT3_PIN		20
+#define CORE_INT4_PIN		71
+#define CORE_INT5_PIN		72
+#define CORE_INT6_PIN		23
+#define CORE_INT7_PIN 		70
 
 
 
@@ -392,66 +391,9 @@ public:
 		}
 #endif
 	}
-/*
-#if defined(__AVR__)
-	// TODO: this must be a no inline function
-	// even noinline does not seem to solve difficult
-	// problems with this.  Oh well, it was only meant
-	// to shrink code size - there's no performance
-	// improvement in this, only code size reduction.
-	__attribute__((noinline)) void update_finishup(void) {
-		asm volatile (
-			"ldi	r30, lo8(pm(Ltable))"	"\n\t"
-			"ldi	r31, hi8(pm(Ltable))"	"\n\t"
-		"Ltable:"				"\n\t"
-			"rjmp	L%=end"			"\n\t"	// 0
-			"rjmp	L%=plus1"		"\n\t"	// 1
-			"rjmp	L%=minus1"		"\n\t"	// 2
-			"rjmp	L%=plus2"		"\n\t"	// 3
-			"rjmp	L%=minus1"		"\n\t"	// 4
-			"rjmp	L%=end"			"\n\t"	// 5
-			"rjmp	L%=minus2"		"\n\t"	// 6
-			"rjmp	L%=plus1"		"\n\t"	// 7
-			"rjmp	L%=plus1"		"\n\t"	// 8
-			"rjmp	L%=minus2"		"\n\t"	// 9
-			"rjmp	L%=end"			"\n\t"	// 10
-			"rjmp	L%=minus1"		"\n\t"	// 11
-			"rjmp	L%=plus2"		"\n\t"	// 12
-			"rjmp	L%=minus1"		"\n\t"	// 13
-			"rjmp	L%=plus1"		"\n\t"	// 14
-			"rjmp	L%=end"			"\n\t"	// 15
-		"L%=minus2:"				"\n\t"
-			"subi	r22, 2"			"\n\t"
-			"sbci	r23, 0"			"\n\t"
-			"sbci	r24, 0"			"\n\t"
-			"sbci	r25, 0"			"\n\t"
-			"rjmp	L%=store"		"\n\t"
-		"L%=minus1:"				"\n\t"
-			"subi	r22, 1"			"\n\t"
-			"sbci	r23, 0"			"\n\t"
-			"sbci	r24, 0"			"\n\t"
-			"sbci	r25, 0"			"\n\t"
-			"rjmp	L%=store"		"\n\t"
-		"L%=plus2:"				"\n\t"
-			"subi	r22, 254"		"\n\t"
-			"rjmp	L%=z"			"\n\t"
-		"L%=plus1:"				"\n\t"
-			"subi	r22, 255"		"\n\t"
-		"L%=z:"	"sbci	r23, 255"		"\n\t"
-			"sbci	r24, 255"		"\n\t"
-			"sbci	r25, 255"		"\n\t"
-		"L%=store:"				"\n\t"
-			"st	-X, r25"		"\n\t"
-			"st	-X, r24"		"\n\t"
-			"st	-X, r23"		"\n\t"
-			"st	-X, r22"		"\n\t"
-		"L%=end:"				"\n"
-		: : : "r22", "r23", "r24", "r25", "r30", "r31");
-	}
-#endif
-*/
 
-#if defined(ENCODER_USE_INTERRUPTS) && !defined(ENCODER_OPTIMIZE_INTERRUPTS)
+
+
 	#ifdef CORE_INT0_PIN
 	static void isr0(void) { update(interruptArgs[0]); }
 	#endif
@@ -476,37 +418,9 @@ public:
 	#ifdef CORE_INT7_PIN
 	static void isr7(void) { update(interruptArgs[7]); }
 	#endif
-#endif
+
 };
 
-#if defined(ENCODER_USE_INTERRUPTS) && defined(ENCODER_OPTIMIZE_INTERRUPTS)
-#if defined(__AVR__)
-#if defined(INT0_vect) && CORE_NUM_INTERRUPT > 0
-ISR(INT0_vect) { Encoder::update(Encoder::interruptArgs[SCRAMBLE_INT_ORDER(0)]); }
-#endif
-#if defined(INT1_vect) && CORE_NUM_INTERRUPT > 1
-ISR(INT1_vect) { Encoder::update(Encoder::interruptArgs[SCRAMBLE_INT_ORDER(1)]); }
-#endif
-#if defined(INT2_vect) && CORE_NUM_INTERRUPT > 2
-ISR(INT2_vect) { Encoder::update(Encoder::interruptArgs[SCRAMBLE_INT_ORDER(2)]); }
-#endif
-#if defined(INT3_vect) && CORE_NUM_INTERRUPT > 3
-ISR(INT3_vect) { Encoder::update(Encoder::interruptArgs[SCRAMBLE_INT_ORDER(3)]); }
-#endif
-#if defined(INT4_vect) && CORE_NUM_INTERRUPT > 4
-ISR(INT4_vect) { Encoder::update(Encoder::interruptArgs[SCRAMBLE_INT_ORDER(4)]); }
-#endif
-#if defined(INT5_vect) && CORE_NUM_INTERRUPT > 5
-ISR(INT5_vect) { Encoder::update(Encoder::interruptArgs[SCRAMBLE_INT_ORDER(5)]); }
-#endif
-#if defined(INT6_vect) && CORE_NUM_INTERRUPT > 6
-ISR(INT6_vect) { Encoder::update(Encoder::interruptArgs[SCRAMBLE_INT_ORDER(6)]); }
-#endif
-#if defined(INT7_vect) && CORE_NUM_INTERRUPT > 7
-ISR(INT7_vect) { Encoder::update(Encoder::interruptArgs[SCRAMBLE_INT_ORDER(7)]); }
-#endif
-#endif // AVR
-#endif // ENCODER_OPTIMIZE_INTERRUPTS
 
 
 #endif
