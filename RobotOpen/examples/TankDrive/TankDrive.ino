@@ -15,7 +15,7 @@ void setup()
   /* Initiate comms */
   RobotOpen.begin(&enabled, &disabled, &timedtasks);
 
-  myservo.attach(9);
+  myservo.attach(5);
 }
 
 

@@ -7,7 +7,6 @@
 #define RobotOpen_h
 
 #include "Arduino.h"
-#include <WebSocket.h>
 #include <ROJoystick.h>
 
 // Solenoid Constants
@@ -47,8 +46,17 @@ private:
     // Dumps data back to the DS
     static void publishDS();
 
+    // Parse out a DS packet
+    static void parsePacket();
+
+    // Grab UDP data
+    static void handleData();
+
     // Dumps status info back to DS
     static void sendStatusPacket();
+    
+    // CRC16 checksum function
+    static unsigned int calc_crc16(unsigned char *buf, unsigned short len);
 };
 
 extern RobotOpenClass RobotOpen;

@@ -7,16 +7,21 @@
 #include "RobotOpen.h"
 #include <SPI.h>
 #include <Ethernet.h>
+#include <EthernetUdp.h>
+#include <avr/pgmspace.h>
 
 /* Library Config */
 #define PROTOCOL_VERSION 0x03
 #define FIRMWARE_VERSION 0x01
 #define DEVICE_ID 0xFE
 
+// Port of incoming UDP data (default)
+#define PORT 22211
+#define WEBSERVER_PORT 80
+
 //Set the MAC address and static IP for the TCP/IP stack
 static byte mac[] = { 0xD4, 0x40, 0x39, 0xFB, 0xE0, 0x33 };
 static byte ip[]  = { 10, 0, 0, 22 };
-#define WEBSERVER_PORT 80
 
 static int _total_joysticks = 0;
 static char _joy1[18];
@@ -39,65 +44,63 @@ static boolean _enabled = false;        // Tells us if the robot is enabled or d
 static unsigned long _lastPacket = 0;   // Keeps track of the last time (ms) we received data
 static unsigned long _lastXmit = 0;     // Keep track of last transmission
 
-// Networking instances
-WebSocket wsServer;
+// Webserver instance
 EthernetServer server(WEBSERVER_PORT);
+
+
+/* CRC lookup table */
+PROGMEM static short crctab[] =
+{
+    0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
+    0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
+    0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81, 0x0E40,
+    0x0A00, 0xCAC1, 0xCB81, 0x0B40, 0xC901, 0x09C0, 0x0880, 0xC841,
+    0xD801, 0x18C0, 0x1980, 0xD941, 0x1B00, 0xDBC1, 0xDA81, 0x1A40,
+    0x1E00, 0xDEC1, 0xDF81, 0x1F40, 0xDD01, 0x1DC0, 0x1C80, 0xDC41,
+    0x1400, 0xD4C1, 0xD581, 0x1540, 0xD701, 0x17C0, 0x1680, 0xD641,
+    0xD201, 0x12C0, 0x1380, 0xD341, 0x1100, 0xD1C1, 0xD081, 0x1040,
+    0xF001, 0x30C0, 0x3180, 0xF141, 0x3300, 0xF3C1, 0xF281, 0x3240,
+    0x3600, 0xF6C1, 0xF781, 0x3740, 0xF501, 0x35C0, 0x3480, 0xF441,
+    0x3C00, 0xFCC1, 0xFD81, 0x3D40, 0xFF01, 0x3FC0, 0x3E80, 0xFE41,
+    0xFA01, 0x3AC0, 0x3B80, 0xFB41, 0x3900, 0xF9C1, 0xF881, 0x3840,
+    0x2800, 0xE8C1, 0xE981, 0x2940, 0xEB01, 0x2BC0, 0x2A80, 0xEA41,
+    0xEE01, 0x2EC0, 0x2F80, 0xEF41, 0x2D00, 0xEDC1, 0xEC81, 0x2C40,
+    0xE401, 0x24C0, 0x2580, 0xE541, 0x2700, 0xE7C1, 0xE681, 0x2640,
+    0x2200, 0xE2C1, 0xE381, 0x2340, 0xE101, 0x21C0, 0x2080, 0xE041,
+    0xA001, 0x60C0, 0x6180, 0xA141, 0x6300, 0xA3C1, 0xA281, 0x6240,
+    0x6600, 0xA6C1, 0xA781, 0x6740, 0xA501, 0x65C0, 0x6480, 0xA441,
+    0x6C00, 0xACC1, 0xAD81, 0x6D40, 0xAF01, 0x6FC0, 0x6E80, 0xAE41,
+    0xAA01, 0x6AC0, 0x6B80, 0xAB41, 0x6900, 0xA9C1, 0xA881, 0x6840,
+    0x7800, 0xB8C1, 0xB981, 0x7940, 0xBB01, 0x7BC0, 0x7A80, 0xBA41,
+    0xBE01, 0x7EC0, 0x7F80, 0xBF41, 0x7D00, 0xBDC1, 0xBC81, 0x7C40,
+    0xB401, 0x74C0, 0x7580, 0xB541, 0x7700, 0xB7C1, 0xB681, 0x7640,
+    0x7200, 0xB2C1, 0xB381, 0x7340, 0xB101, 0x71C0, 0x7080, 0xB041,
+    0x5000, 0x90C1, 0x9181, 0x5140, 0x9301, 0x53C0, 0x5280, 0x9241,
+    0x9601, 0x56C0, 0x5780, 0x9741, 0x5500, 0x95C1, 0x9481, 0x5440,
+    0x9C01, 0x5CC0, 0x5D80, 0x9D41, 0x5F00, 0x9FC1, 0x9E81, 0x5E40,
+    0x5A00, 0x9AC1, 0x9B81, 0x5B40, 0x9901, 0x59C0, 0x5880, 0x9841,
+    0x8801, 0x48C0, 0x4980, 0x8941, 0x4B00, 0x8BC1, 0x8A81, 0x4A40,
+    0x4E00, 0x8EC1, 0x8F81, 0x4F40, 0x8D01, 0x4DC0, 0x4C80, 0x8C41,
+    0x4400, 0x84C1, 0x8581, 0x4540, 0x8701, 0x47C0, 0x4680, 0x8641,
+    0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
+};
+
+
+// Networking support
+static char _packetBuffer[UDP_TX_PACKET_MAX_SIZE];
+static unsigned int _packetBufferSize = 0;
+static IPAddress _remoteIp;                     // holds received packet's originating IP
+static unsigned int _remotePort = 0;            // holds received packet's originating port
+
 
 // Class constructor
 RobotOpenClass RobotOpen;
 
+// A UDP instance to let us send and receive packets over UDP
+EthernetUDP Udp;
 
 
-void onConnect(WebSocket &socket) {
-    _lastPacket = millis();
-}
 
-void onData(WebSocket &socket, char* dataString, byte frameLength) {
-  switch (dataString[0]) {
-    case 'h': // heartbeat
-      _enabled = false;
-      _lastPacket = millis();
-      break;
-
-    case 'c': // control packet
-      _enabled = true;
-      _lastPacket = millis();
-      int i;
-
-      _total_joysticks = (int)(frameLength/18);
-
-      for (i = 0; i < frameLength; i++) {
-        if (i >= 1 && i < 19) {
-            // 1st joystick
-            _joy1[i-1] = dataString[i];
-        }
-        else if (i >= 19 && i < 37) {
-            // 2nd joystick
-            _joy1[i-19] = dataString[i];
-        }
-        else if (i >= 37 && i < 55) {
-            // 3rd joystick
-            _joy1[i-37] = dataString[i];
-        }
-        else if (i >= 55 && i < 73) {
-            // 4th joystick
-            _joy1[i-55] = dataString[i];
-        }
-        else {
-            break;
-        }      
-      }
-      break;
-
-    default:
-      // ignore the packet
-      break;
-  }
-}
-
-void onDisconnect(WebSocket &socket) {
-    _enabled = false;
-}
 
 void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabledCallback, LoopCallback *timedtasksCallback) {
     // Setup callbacks
@@ -107,11 +110,7 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
 
     // Start Ethernet, UDP, and Serial
     Ethernet.begin(mac,ip);
-    
-    wsServer.registerConnectCallback(&onConnect);
-    wsServer.registerDataCallback(&onData);
-    wsServer.registerDisconnectCallback(&onDisconnect);  
-    wsServer.begin();
+    Udp.begin(PORT);
 
     // fire up the webserver
     server.begin();
@@ -119,7 +118,7 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
     // setup serial for debugging
     Serial.begin(115200);
 
-    // setup packets
+    // setup DS packet
     _outgoingPacket[0] = 'd';
 
     delay(250); // Give Ethernet time to get ready
@@ -140,7 +139,7 @@ void RobotOpenClass::syncDS() {
               client.println("Content-Type: text/html");
               client.println("Connnection: close");
               client.println();
-              client.println("<!DOCTYPE HTML><html><h2>Welcome to RobotOpen</h2></html>");
+              client.println("<!DOCTYPE HTML><html><h2>RobotOpen Controller</h2></html>");
               break;
             }
             if (c == '\n') {
@@ -156,17 +155,14 @@ void RobotOpenClass::syncDS() {
 
         client.stop();
     }
-
-    // Should be called for each loop.
-    wsServer.listen();
   
     // detect disconnect
     if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
         _enabled = false;
-        if (wsServer.isConnected()) {
-          wsServer.disconnectStream();
-        }
-	  }
+	}
+
+    // Process any data sitting in the buffer
+    handleData();
 
     // Run user provided loops
     if (_enabled && whileEnabled)
@@ -180,7 +176,7 @@ void RobotOpenClass::syncDS() {
     _dashboardPacketQueued = true;
 
     // send out status/DS packets frequently
-    if (wsServer.isConnected() && (millis() - _lastXmit) > 100) {
+    if ((millis() - _lastXmit) > 200) {
         sendStatusPacket();
         publishDS();
         _dashboardPacketQueued = false;
@@ -190,13 +186,27 @@ void RobotOpenClass::syncDS() {
 
 void RobotOpenClass::log(String data) {
     int dataLength = data.length();
-    char logData[dataLength];
+    char logData[dataLength+1];
+
+    logData[0] = 'p';
 
     for (int i=0; i < dataLength; i++) {
-        logData[i] = data[i];
+        logData[i+1] = data[i];
     }
 
-    wsServer.sendText(logData, dataLength);
+    if (_remotePort != 0) {
+        Udp.beginPacket(_remoteIp, _remotePort);
+        Udp.write(logData);
+        Udp.endPacket();
+    }
+}
+
+unsigned int RobotOpenClass::calc_crc16(unsigned char *buf, unsigned short len) {
+    unsigned short crc = 0;
+    unsigned short i;
+    for (i=0; i<len; i++)
+        crc = ((crc >> 8) & 0xff) ^ pgm_read_word_near(crctab + (unsigned int)((crc ^ *buf++) & 0xff));
+    return (crc);
 }
 
 void RobotOpenClass::sendStatusPacket() {
@@ -218,7 +228,11 @@ void RobotOpenClass::sendStatusPacket() {
 
     sPacket[5] = (unsigned char)(uptime & 0xFF); // uptime in minutes (maxes out at 255)
 
-    wsServer.sendBinary(sPacket, 6);
+    if (_remotePort != 0) {
+        Udp.beginPacket(_remoteIp, _remotePort);
+        Udp.write(sPacket);
+        Udp.endPacket();
+    }
 }
 
 boolean RobotOpenClass::publish(String id, boolean val) {
@@ -315,8 +329,80 @@ char* RobotOpenClass::getJoystick(char index) {
         return 0;
 }
 
+// This function's purpose is to receive data and prepare it for parsing
+void RobotOpenClass::handleData() {
+    _packetBufferSize = Udp.parsePacket();
+    
+    // If there's data, read the packet in
+    if (_packetBufferSize > 0) {
+        _remotePort = Udp.remotePort();
+        _remoteIp = Udp.remoteIP();
+        Udp.read(_packetBuffer, UDP_TX_PACKET_MAX_SIZE);
+        parsePacket();  // Data is all set, time to parse through it
+    }
+}
+
+void RobotOpenClass::parsePacket() {
+    unsigned int crc16_recv = (_packetBuffer[_packetBufferSize - 2] << 8) | _packetBuffer[_packetBufferSize - 1];
+    
+    if (calc_crc16((unsigned char *)_packetBuffer, _packetBufferSize - 2) == crc16_recv) {
+        // control packet is 'c' + joystick data + crc16
+        int frameLength = (_packetBufferSize - 3);
+
+        // VALID PACKET
+        switch (_packetBuffer[0]) {
+            case 'h': // heartbeat
+              _enabled = false;
+              _lastPacket = millis();
+              break;
+
+            case 'c': // control packet
+              _enabled = true;
+              _lastPacket = millis();
+              _total_joysticks = (int)(frameLength/18);
+              int i;
+
+              for (i = 0; i < frameLength; i++) {
+                if (i >= 1 && i < 19) {
+                    // 1st joystick
+                    _joy1[i-1] = _packetBuffer[i+1];
+                }
+                else if (i >= 19 && i < 37) {
+                    // 2nd joystick
+                    _joy2[i-19] = _packetBuffer[i+1];
+                }
+                else if (i >= 37 && i < 55) {
+                    // 3rd joystick
+                    _joy3[i-37] = _packetBuffer[i+1];
+                }
+                else if (i >= 55 && i < 73) {
+                    // 4th joystick
+                    _joy4[i-55] = _packetBuffer[i+1];
+                }
+                else {
+                    break;
+                }      
+              }
+              break;
+
+            default:
+              // ignore the packet
+              break;
+        }
+    }
+}
+
 void RobotOpenClass::publishDS() {
-    wsServer.sendBinary(_outgoingPacket, _outgoingPacketSize);
+    // make sure packet is null terminated
+    if (_outgoingPacketSize < 256)
+        _outgoingPacket[_outgoingPacketSize] = 0;
+
+    if (_remotePort != 0) {
+        Udp.beginPacket(_remoteIp, _remotePort);
+        Udp.write(_outgoingPacket);
+        Udp.endPacket();
+    }
+
     _outgoingPacketSize = 1;
 }
 

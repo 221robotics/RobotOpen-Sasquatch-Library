@@ -1,3 +1,11 @@
+[LATEST DISCUSSION]
+driverstation logging
+auton
+watchdog/interrupt
+all pins that are outputs are grounded
+
+
+
 -battery voltage
 -enable/disable
 -set IP address of robot
