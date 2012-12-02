@@ -176,7 +176,7 @@ void RobotOpenClass::syncDS() {
     _dashboardPacketQueued = true;
 
     // send out status/DS packets frequently
-    if ((millis() - _lastXmit) > 200) {
+    if ((millis() - _lastXmit) > 200 && (millis() - _lastPacket) <= 200) {
         sendStatusPacket();
         publishDS();
         _dashboardPacketQueued = false;
@@ -196,7 +196,7 @@ void RobotOpenClass::log(String data) {
 
     if (_remotePort != 0) {
         Udp.beginPacket(_remoteIp, _remotePort);
-        Udp.write(logData);
+        Udp.write((uint8_t *)logData, dataLength+1);
         Udp.endPacket();
     }
 }
@@ -217,7 +217,7 @@ void RobotOpenClass::sendStatusPacket() {
     if (_enabled)                   // robot enable state
         sPacket[2] = 0xFF;
     else
-        sPacket[2] = 0x00;
+        sPacket[2] = 0xFE;
 
     sPacket[3] = FIRMWARE_VERSION;  // User configured firmware version
     sPacket[4] = DEVICE_ID;         // Device ID of the hardware this is running on
@@ -230,7 +230,7 @@ void RobotOpenClass::sendStatusPacket() {
 
     if (_remotePort != 0) {
         Udp.beginPacket(_remoteIp, _remotePort);
-        Udp.write(sPacket);
+        Udp.write((uint8_t *)sPacket, 6);
         Udp.endPacket();
     }
 }
@@ -343,6 +343,12 @@ void RobotOpenClass::handleData() {
 }
 
 void RobotOpenClass::parsePacket() {
+    // DEBUG PACKETS
+    /*for (int i = 0; i < _packetBufferSize; i++) { 
+        Serial.print(_packetBuffer[i], DEC);
+        Serial.println();
+    }*/
+
     unsigned int crc16_recv = (_packetBuffer[_packetBufferSize - 2] << 8) | _packetBuffer[_packetBufferSize - 1];
     
     if (calc_crc16((unsigned char *)_packetBuffer, _packetBufferSize - 2) == crc16_recv) {
@@ -393,13 +399,9 @@ void RobotOpenClass::parsePacket() {
 }
 
 void RobotOpenClass::publishDS() {
-    // make sure packet is null terminated
-    if (_outgoingPacketSize < 256)
-        _outgoingPacket[_outgoingPacketSize] = 0;
-
     if (_remotePort != 0) {
         Udp.beginPacket(_remoteIp, _remotePort);
-        Udp.write(_outgoingPacket);
+        Udp.write((uint8_t *)_outgoingPacket, _outgoingPacketSize);
         Udp.endPacket();
     }
 
