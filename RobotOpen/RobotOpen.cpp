@@ -36,13 +36,12 @@ static LoopCallback *whileTimedTasks;
 
 // Hold DS data
 static boolean _dashboardPacketQueued = false;
-static char _outgoingPacket[255];      // Data to publish to DS is stored into this array
+static char _outgoingPacket[512];      // Data to publish to DS is stored into this array
 static unsigned char _outgoingPacketSize = 1;
 
 // Robot specific stuff
 static boolean _enabled = false;        // Tells us if the robot is enabled or disabled
 static unsigned long _lastPacket = 0;   // Keeps track of the last time (ms) we received data
-static unsigned long _lastXmit = 0;     // Keep track of last transmission
 
 // Webserver instance
 EthernetServer server(WEBSERVER_PORT);
@@ -174,14 +173,6 @@ void RobotOpenClass::syncDS() {
 
     // ensure we only accept values for the DS packet for one loop
     _dashboardPacketQueued = true;
-
-    // send out status/DS packets frequently
-    if ((millis() - _lastXmit) > 200 && (millis() - _lastPacket) <= 200) {
-        sendStatusPacket();
-        publishDS();
-        _dashboardPacketQueued = false;
-        _lastXmit = millis();
-    }
 }
 
 void RobotOpenClass::log(String data) {
@@ -236,7 +227,7 @@ void RobotOpenClass::sendStatusPacket() {
 }
 
 boolean RobotOpenClass::publish(String id, boolean val) {
-    if (_outgoingPacketSize+3+id.length() <= 255 && !_dashboardPacketQueued) {
+    if (_outgoingPacketSize+3+id.length() <= 512 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'b'; // type
         if (val == 0)
@@ -253,7 +244,7 @@ boolean RobotOpenClass::publish(String id, boolean val) {
 }
 
 boolean RobotOpenClass::publish(String id, char val) {
-    if (_outgoingPacketSize+3+id.length() <= 255 && !_dashboardPacketQueued) {
+    if (_outgoingPacketSize+3+id.length() <= 512 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'c'; // type
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & val;  // value
@@ -267,7 +258,7 @@ boolean RobotOpenClass::publish(String id, char val) {
 }
 
 boolean RobotOpenClass::publish(String id, int val) {
-    if (_outgoingPacketSize+4+id.length() <= 255 && !_dashboardPacketQueued) {
+    if (_outgoingPacketSize+4+id.length() <= 512 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (4+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'i'; // type
         _outgoingPacket[_outgoingPacketSize++] = (val >> 8) & 0xFF;  // value
@@ -282,7 +273,7 @@ boolean RobotOpenClass::publish(String id, int val) {
 }
 
 boolean RobotOpenClass::publish(String id, long val) {
-    if (_outgoingPacketSize+6+id.length() <= 255 && !_dashboardPacketQueued) {
+    if (_outgoingPacketSize+6+id.length() <= 512 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (6+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'l'; // type
         _outgoingPacket[_outgoingPacketSize++] = (val >> 24) & 0xFF;  // value
@@ -299,7 +290,7 @@ boolean RobotOpenClass::publish(String id, long val) {
 }
 
 boolean RobotOpenClass::publish(String id, float val) {
-    if (_outgoingPacketSize+6+id.length() <= 255 && !_dashboardPacketQueued) {
+    if (_outgoingPacketSize+6+id.length() <= 512 && !_dashboardPacketQueued) {
         long conVal = (long)val;
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (6+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'f'; // type
@@ -396,6 +387,10 @@ void RobotOpenClass::parsePacket() {
               break;
         }
     }
+
+    sendStatusPacket();
+    publishDS();
+    _dashboardPacketQueued = false;
 }
 
 void RobotOpenClass::publishDS() {
