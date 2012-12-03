@@ -8,14 +8,13 @@
 ROJoystick usb1(1);
 
 // setup a servo
-Servo myservo;
+Servo lDrive;
+Servo rDrive;
 
 void setup()
 {
   /* Initiate comms */
   RobotOpen.begin(&enabled, &disabled, &timedtasks);
-
-  myservo.attach(5);
 }
 
 
@@ -23,8 +22,13 @@ void setup()
  * should live here that allows the robot to operate
  */
 void enabled() {
+  // Attach PWM Outputs
+  lDrive.attach(5);
+  rDrive.attach(6);
+
   // Constantly update PWM values with joystick values
-  myservo.write(map(usb1.rightY(), 0, 255, 0, 180));
+  lDrive.write(map(usb1.leftY(), 0, 255, 0, 180));
+  rDrive.write(map(usb1.rightY(), 0, 255, 180, 0));
 }
 
 
@@ -33,7 +37,8 @@ void enabled() {
  * to safe/disable values here
  */
 void disabled() {
-  myservo.write(90);
+  lDrive.detach();
+  rDrive.detach();
 }
 
 
@@ -41,6 +46,7 @@ void disabled() {
  * This is also a good spot to put driver station publish code
  */
 void timedtasks() {
+  RobotOpen.publish("left-y", usb1.leftY());
   RobotOpen.publish("right-y", usb1.rightY());
 }
 

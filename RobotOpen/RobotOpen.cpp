@@ -86,7 +86,7 @@ PROGMEM static short crctab[] =
 
 
 // Networking support
-static char _packetBuffer[UDP_TX_PACKET_MAX_SIZE];
+static unsigned char _packetBuffer[UDP_TX_PACKET_MAX_SIZE];
 static unsigned int _packetBufferSize = 0;
 static IPAddress _remoteIp;                     // holds received packet's originating IP
 static unsigned int _remotePort = 0;            // holds received packet's originating port
@@ -116,6 +116,14 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
 
     // setup serial for debugging
     Serial.begin(115200);
+
+    pinMode(73, OUTPUT);
+    pinMode(74, OUTPUT);
+    pinMode(75, OUTPUT);
+
+    digitalWrite(73, LOW);
+    digitalWrite(74, LOW);
+    digitalWrite(75, LOW);
 
     // setup DS packet
     _outgoingPacket[0] = 'd';
@@ -159,6 +167,23 @@ void RobotOpenClass::syncDS() {
     if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
         _enabled = false;
 	}
+
+    // status LED
+    if (_enabled == true) {
+        digitalWrite(73, HIGH);
+        digitalWrite(74, LOW);
+        digitalWrite(75, LOW);
+    }
+    else if ((millis() - _lastPacket) > 200) {
+        digitalWrite(73, LOW);
+        digitalWrite(74, HIGH);
+        digitalWrite(75, LOW);
+    }
+    else {
+        digitalWrite(73, LOW);
+        digitalWrite(74, LOW);
+        digitalWrite(75, HIGH);
+    }
 
     // Process any data sitting in the buffer
     handleData();
@@ -334,15 +359,10 @@ void RobotOpenClass::handleData() {
 }
 
 void RobotOpenClass::parsePacket() {
-    // DEBUG PACKETS
-    /*for (int i = 0; i < _packetBufferSize; i++) { 
-        Serial.print(_packetBuffer[i], DEC);
-        Serial.println();
-    }*/
-
+    // calculate crc16
     unsigned int crc16_recv = (_packetBuffer[_packetBufferSize - 2] << 8) | _packetBuffer[_packetBufferSize - 1];
     
-    if (calc_crc16((unsigned char *)_packetBuffer, _packetBufferSize - 2) == crc16_recv) {
+    if (calc_crc16(_packetBuffer, _packetBufferSize - 2) == crc16_recv) {
         // control packet is 'c' + joystick data + crc16
         int frameLength = (_packetBufferSize - 3);
 
