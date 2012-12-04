@@ -1,4 +1,5 @@
 #include <SPI.h>
+#include <SD.h>
 #include <Ethernet.h>
 #include <RobotOpen.h>
 #include <Servo.h>
@@ -48,6 +49,7 @@ void disabled() {
 void timedtasks() {
   RobotOpen.publish("left-y", usb1.leftY());
   RobotOpen.publish("right-y", usb1.rightY());
+  RobotOpen.log("some debug data...");
 }
 
 

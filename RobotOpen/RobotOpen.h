@@ -49,6 +49,9 @@ private:
     // Parse out a DS packet
     static void parsePacket();
 
+    // Parse out a DS packet
+    static void logToSD();
+
     // Grab UDP data
     static void handleData();
 

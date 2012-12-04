@@ -16,25 +16,25 @@ int ROJoystick::getComponent(char componentIndex) {
 
 byte ROJoystick::leftX() {
 	if (validate(0) != -1)
-		return (byte)validate(0);
+		return validate(0) & 0xFF;
 	else
 		return 127;
 }
 byte ROJoystick::leftY() {
 	if (validate(1) != -1)
-		return (byte)validate(1);
+		return validate(1) & 0xFF;
 	else
 		return 127;
 }
 byte ROJoystick::rightX() {
 	if (validate(2) != -1)
-		return (byte)validate(2);
+		return validate(2) & 0xFF;
 	else
 		return 127;
 }
 byte ROJoystick::rightY() {
 	if (validate(3) != -1)
-		return (byte)validate(3);
+		return validate(3) & 0xFF;
 	else
 		return 127;
 }
@@ -70,25 +70,25 @@ boolean ROJoystick::btnRStick() {
 }
 byte ROJoystick::dPad() {
 	if (validate(10) != -1)
-		return (byte)validate(10);
+		return validate(10) & 0xFF;
 	else
 		return 0;
 }
 boolean ROJoystick::btnLShoulder() {
-	return (validate(11) > 0);
+	return (validate(11) > 0) & 0xFF;
 }
 boolean ROJoystick::btnRShoulder() {
-	return (validate(12) > 0);
+	return (validate(12) > 0) & 0xFF;
 }
 byte ROJoystick::lTrigger() {
 	if (validate(13) != -1)
-		return (byte)validate(13);
+		return validate(13) & 0xFF;
 	else
 		return 0;
 }
 byte ROJoystick::rTrigger() {
 	if (validate(14) != -1)
-		return (byte)validate(14);
+		return validate(14) & 0xFF;
 	else
 		return 0;
 }
@@ -103,37 +103,37 @@ boolean ROJoystick::btnAux() {
 }
 byte ROJoystick::accelX() {
 	if (validate(12) != -1)
-		return (byte)validate(12);
+		return validate(12) & 0xFF;
 	else
 		return 0;
 }
 byte ROJoystick::accelY() {
 	if (validate(13) != -1)
-		return (byte)validate(13);
+		return validate(13) & 0xFF;
 	else
 		return 0;
 }
 byte ROJoystick::accelZ() {
 	if (validate(14) != -1)
-		return (byte)validate(14);
+		return validate(14) & 0xFF;
 	else
 		return 0;
 }
 byte ROJoystick::gyroX() {
 	if (validate(15) != -1)
-		return (byte)validate(15);
+		return validate(15) & 0xFF;
 	else
 		return 0;
 }
 byte ROJoystick::gyroY() {
 	if (validate(16) != -1)
-		return (byte)validate(16);
+		return validate(16) & 0xFF;
 	else
 		return 0;
 }
 byte ROJoystick::gyroZ() {
 	if (validate(17) != -1)
-		return (byte)validate(17);
+		return validate(17) & 0xFF;
 	else
 		return 0;
 }

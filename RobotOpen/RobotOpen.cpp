@@ -4,30 +4,42 @@
 */
 
 #include "Arduino.h"
-#include "RobotOpen.h"
 #include <SPI.h>
+#include <SD.h>
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 #include <avr/pgmspace.h>
+#include <avr/wdt.h>
+#include "RobotOpen.h"
 
 /* Library Config */
 #define PROTOCOL_VERSION 0x03
 #define FIRMWARE_VERSION 0x01
 #define DEVICE_ID 0xFE
 
-// Port of incoming UDP data (default)
+// Port config (UDP & WEB)
 #define PORT 22211
 #define WEBSERVER_PORT 80
 
-//Set the MAC address and static IP for the TCP/IP stack
+// How often to push data to the SD card
+#define LOGGING_INTERVAL_MS 250
+
+// The interval for timed tasks to run
+#define TIMED_TASK_INTERVAL_MS 50
+
+// Set the MAC address and static IP for the TCP/IP stack
 static byte mac[] = { 0xD4, 0x40, 0x39, 0xFB, 0xE0, 0x33 };
 static byte ip[]  = { 10, 0, 0, 22 };
 
+// joystick data
 static int _total_joysticks = 0;
 static char _joy1[18];
 static char _joy2[18];
 static char _joy3[18];
 static char _joy4[18];
+
+// SPI CS
+const int chipSelect = 4;
 
 // Pointers to loop callbacks
 static LoopCallback *whileEnabled;
@@ -37,11 +49,13 @@ static LoopCallback *whileTimedTasks;
 // Hold DS data
 static boolean _dashboardPacketQueued = false;
 static char _outgoingPacket[512];      // Data to publish to DS is stored into this array
-static unsigned char _outgoingPacketSize = 1;
+static unsigned int _outgoingPacketSize = 1;
 
 // Robot specific stuff
-static boolean _enabled = false;        // Tells us if the robot is enabled or disabled
-static unsigned long _lastPacket = 0;   // Keeps track of the last time (ms) we received data
+static boolean _enabled = false;            // Tells us if the robot is enabled or disabled
+static unsigned long _lastPacket = 0;       // Keeps track of the last time (ms) we received data
+static unsigned long _lastLog = 0;          // Keeps track of the last time we wrote to the log
+static unsigned long _lastTimedLoop = 0;    // Keeps track of the last time the timed loop ran
 
 // Webserver instance
 EthernetServer server(WEBSERVER_PORT);
@@ -98,6 +112,9 @@ RobotOpenClass RobotOpen;
 // A UDP instance to let us send and receive packets over UDP
 EthernetUDP Udp;
 
+// File on SD card to log to
+File logFile;
+
 
 
 
@@ -117,6 +134,15 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
     // setup serial for debugging
     Serial.begin(115200);
 
+    // output on SPI SS
+    pinMode(53, OUTPUT);
+
+    // enable logging to SD
+    if (!SD.begin(chipSelect)) {
+        Serial.println("Card failed, or not present");
+    }
+
+    // status LED config
     pinMode(73, OUTPUT);
     pinMode(74, OUTPUT);
     pinMode(75, OUTPUT);
@@ -129,11 +155,17 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
     _outgoingPacket[0] = 'd';
 
     delay(250); // Give Ethernet time to get ready
+
+    // watchdog go!
+    wdt_enable(WDTO_250MS);
 }
 
 void RobotOpenClass::syncDS() {
+    // feed watchdog
+    wdt_reset();
+
     // listen for incoming clients
-    EthernetClient client = server.available();
+    /*EthernetClient client = server.available();
     if (client) {
         // an http request ends with a blank line
         boolean currentLineIsBlank = true;
@@ -161,12 +193,7 @@ void RobotOpenClass::syncDS() {
         }
 
         client.stop();
-    }
-  
-    // detect disconnect
-    if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
-        _enabled = false;
-	}
+    }*/
 
     // status LED
     if (_enabled == true) {
@@ -174,16 +201,19 @@ void RobotOpenClass::syncDS() {
         digitalWrite(74, LOW);
         digitalWrite(75, LOW);
     }
-    else if ((millis() - _lastPacket) > 200) {
-        digitalWrite(73, LOW);
-        digitalWrite(74, HIGH);
-        digitalWrite(75, LOW);
-    }
     else {
         digitalWrite(73, LOW);
         digitalWrite(74, LOW);
         digitalWrite(75, HIGH);
     }
+  
+    // detect disconnect
+    if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
+        _enabled = false;
+        digitalWrite(73, LOW);
+        digitalWrite(74, HIGH);
+        digitalWrite(75, LOW);
+	}
 
     // Process any data sitting in the buffer
     handleData();
@@ -193,11 +223,23 @@ void RobotOpenClass::syncDS() {
         whileEnabled();
     if (!_enabled && whileDisabled)
         whileDisabled();
-    if (whileTimedTasks)
-        whileTimedTasks();
 
-    // ensure we only accept values for the DS packet for one loop
-    _dashboardPacketQueued = true;
+    // run timed tasks
+    if ((millis() - _lastTimedLoop) > TIMED_TASK_INTERVAL_MS) { 
+        if (whileTimedTasks)
+            whileTimedTasks();
+        _lastTimedLoop = millis();
+    }
+
+    // ensure we only accept values for the DS packet for one debug loop and that data was actually published
+    if (_outgoingPacketSize > 1)
+        _dashboardPacketQueued = true;
+
+    // log data to SD card
+    if ((millis() - _lastLog) > LOGGING_INTERVAL_MS) { 
+        logToSD();
+        _lastLog = millis();
+    }
 }
 
 void RobotOpenClass::log(String data) {
@@ -215,6 +257,19 @@ void RobotOpenClass::log(String data) {
         Udp.write((uint8_t *)logData, dataLength+1);
         Udp.endPacket();
     }
+}
+
+void RobotOpenClass::logToSD() {
+    logFile = SD.open("datalog.txt", FILE_WRITE);
+    if (logFile) {
+        logFile.print(millis());
+        logFile.print("ms -- System Alive");
+        if (_enabled)
+            logFile.println(" [ENABLED]");
+        else
+            logFile.println(" [DISABLED]");
+        logFile.close();
+  }
 }
 
 unsigned int RobotOpenClass::calc_crc16(unsigned char *buf, unsigned short len) {
@@ -409,8 +464,8 @@ void RobotOpenClass::parsePacket() {
     }
 
     sendStatusPacket();
-    publishDS();
-    _dashboardPacketQueued = false;
+    if (_dashboardPacketQueued)
+        publishDS();
 }
 
 void RobotOpenClass::publishDS() {
@@ -421,6 +476,7 @@ void RobotOpenClass::publishDS() {
     }
 
     _outgoingPacketSize = 1;
+    _dashboardPacketQueued = false;
 }
 
 boolean RobotOpenClass::enabled() {

@@ -41,8 +41,8 @@
 #define CORE_NUM_INTERRUPT	8
 #define CORE_INT0_PIN		19
 #define CORE_INT1_PIN		22
-#define CORE_INT2_PIN		21
-#define CORE_INT3_PIN		20
+#define CORE_INT2_PIN		21 // I2C SCL -- TAKEN
+#define CORE_INT3_PIN		20 // I2C SDA -- TAKEN
 #define CORE_INT4_PIN		71
 #define CORE_INT5_PIN		72
 #define CORE_INT6_PIN		23
