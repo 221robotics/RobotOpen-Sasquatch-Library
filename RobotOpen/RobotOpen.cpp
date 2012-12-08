@@ -39,7 +39,7 @@ static char _joy3[18];
 static char _joy4[18];
 
 // SPI CS
-const int chipSelect = 4;
+const int chipSelect = 9;
 
 // Pointers to loop callbacks
 static LoopCallback *whileEnabled;
@@ -143,13 +143,13 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
     }
 
     // status LED config
-    pinMode(73, OUTPUT);
-    pinMode(74, OUTPUT);
-    pinMode(75, OUTPUT);
+    pinMode(4, OUTPUT);
+    pinMode(5, OUTPUT);
+    pinMode(6, OUTPUT);
 
-    digitalWrite(73, LOW);
-    digitalWrite(74, LOW);
-    digitalWrite(75, LOW);
+    digitalWrite(4, LOW);
+    digitalWrite(5, LOW);
+    digitalWrite(6, LOW);
 
     // setup DS packet
     _outgoingPacket[0] = 'd';
@@ -197,22 +197,22 @@ void RobotOpenClass::syncDS() {
 
     // status LED
     if (_enabled == true) {
-        digitalWrite(73, HIGH);
-        digitalWrite(74, LOW);
-        digitalWrite(75, LOW);
+        digitalWrite(4, HIGH);
+        digitalWrite(5, LOW);
+        digitalWrite(6, LOW);
     }
     else {
-        digitalWrite(73, LOW);
-        digitalWrite(74, LOW);
-        digitalWrite(75, HIGH);
+        digitalWrite(4, LOW);
+        digitalWrite(5, LOW);
+        digitalWrite(6, HIGH);
     }
   
     // detect disconnect
     if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
         _enabled = false;
-        digitalWrite(73, LOW);
-        digitalWrite(74, HIGH);
-        digitalWrite(75, LOW);
+        digitalWrite(4, LOW);
+        digitalWrite(5, HIGH);
+        digitalWrite(6, LOW);
 	}
 
     // Process any data sitting in the buffer

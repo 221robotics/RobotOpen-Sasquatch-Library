@@ -24,8 +24,8 @@ void setup()
  */
 void enabled() {
   // Attach PWM Outputs
-  lDrive.attach(5);
-  rDrive.attach(6);
+  lDrive.attach(23);
+  rDrive.attach(24);
 
   // Constantly update PWM values with joystick values
   lDrive.write(map(usb1.leftY(), 0, 255, 0, 180));
