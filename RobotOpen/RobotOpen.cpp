@@ -197,22 +197,22 @@ void RobotOpenClass::syncDS() {
 
     // status LED
     if (_enabled == true) {
-        digitalWrite(4, HIGH);
-        digitalWrite(5, LOW);
+        digitalWrite(4, LOW);
+        digitalWrite(5, HIGH);
         digitalWrite(6, LOW);
     }
     else {
-        digitalWrite(4, LOW);
+        digitalWrite(4, HIGH);
         digitalWrite(5, LOW);
-        digitalWrite(6, HIGH);
+        digitalWrite(6, LOW);
     }
   
     // detect disconnect
     if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
         _enabled = false;
         digitalWrite(4, LOW);
-        digitalWrite(5, HIGH);
-        digitalWrite(6, LOW);
+        digitalWrite(5, LOW);
+        digitalWrite(6, HIGH);
 	}
 
     // Process any data sitting in the buffer
