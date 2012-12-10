@@ -8,6 +8,7 @@
 
 #include "Arduino.h"
 #include <ROJoystick.h>
+#include "IPAddress.h"
 
 // Solenoid Constants
 #define ON 0xFF
@@ -18,6 +19,9 @@ typedef void LoopCallback();
 
 class RobotOpenClass {
 public:
+    // Set the IP address that the Robot controller will have
+    static void setIP(IPAddress newIP);
+
     // Fire up the RobotOpen object and get things running
     static void begin(LoopCallback *enabledCallback, LoopCallback *disabledCallback, LoopCallback *timedtasksCallback);
     

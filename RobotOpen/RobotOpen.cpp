@@ -29,7 +29,7 @@
 
 // Set the MAC address and static IP for the TCP/IP stack
 static byte mac[] = { 0xD4, 0x40, 0x39, 0xFB, 0xE0, 0x33 };
-static byte ip[]  = { 10, 0, 0, 22 };
+static IPAddress ip(10, 0, 0, 22);
 
 // joystick data
 static int _total_joysticks = 0;
@@ -116,6 +116,9 @@ EthernetUDP Udp;
 File logFile;
 
 
+void RobotOpenClass::setIP(IPAddress newIP) {
+    ip = newIP;
+}
 
 
 void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabledCallback, LoopCallback *timedtasksCallback) {
