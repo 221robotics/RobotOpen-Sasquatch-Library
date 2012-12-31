@@ -33,10 +33,10 @@ static IPAddress ip(10, 0, 0, 22);
 
 // joystick data
 static int _total_joysticks = 0;
-static char _joy1[18];
-static char _joy2[18];
-static char _joy3[18];
-static char _joy4[18];
+static char _joy1[24];
+static char _joy2[24];
+static char _joy3[24];
+static char _joy4[24];
 
 // SPI CS
 const int chipSelect = 9;
@@ -434,25 +434,25 @@ void RobotOpenClass::parsePacket() {
             case 'c': // control packet
               _enabled = true;
               _lastPacket = millis();
-              _total_joysticks = (int)(frameLength/18);
+              _total_joysticks = (int)(frameLength/24);
               int i;
 
               for (i = 0; i < frameLength; i++) {
-                if (i >= 0 && i < 18) {
+                if (i >= 0 && i < 24) {
                     // 1st joystick
                     _joy1[i] = _packetBuffer[i+1];
                 }
-                else if (i >= 18 && i < 36) {
+                else if (i >= 24 && i < 42) {
                     // 2nd joystick
-                    _joy2[i-18] = _packetBuffer[i+19];
+                    _joy2[i-24] = _packetBuffer[i+25];
                 }
-                else if (i >= 36 && i < 54) {
+                else if (i >= 42 && i < 60) {
                     // 3rd joystick
-                    _joy3[i-36] = _packetBuffer[i+37];
+                    _joy3[i-42] = _packetBuffer[i+43];
                 }
-                else if (i >= 54 && i < 72) {
+                else if (i >= 60 && i < 78) {
                     // 4th joystick
-                    _joy4[i-54] = _packetBuffer[i+55];
+                    _joy4[i-60] = _packetBuffer[i+61];
                 }
                 else {
                     break;
