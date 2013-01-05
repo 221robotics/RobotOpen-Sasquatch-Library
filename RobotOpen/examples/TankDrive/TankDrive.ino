@@ -47,8 +47,9 @@ void disabled() {
  * This is also a good spot to put driver station publish code
  */
 void timedtasks() {
-  RobotOpen.publish("left-y", usb1.leftY());
-  RobotOpen.publish("right-y", usb1.rightY());
+  RobotOpen.publish("analog 0", analogRead(0));
+  RobotOpen.publish("analog 1", analogRead(1));
+  RobotOpen.publish("analog 2", analogRead(2));
   RobotOpen.log("some debug data...");
 }
 
