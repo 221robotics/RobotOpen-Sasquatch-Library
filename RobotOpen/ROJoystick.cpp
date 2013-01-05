@@ -8,7 +8,7 @@ ROJoystick::ROJoystick(char index)
 }
 
 int ROJoystick::getComponent(char componentIndex) {
-	if (componentIndex >= 0 && componentIndex <= 19)
+	if (componentIndex >= 0 && componentIndex < 24)
     	return validate(componentIndex);
     else
     	return -1;
@@ -99,7 +99,7 @@ boolean ROJoystick::dPadRight() {
 int ROJoystick::validate(char componentIndex) {
     char *joy = RobotOpen.getJoystick(_index);
 
-    if (joy == 0 || componentIndex > 19)
+    if (joy == 0 || componentIndex > 23)
         return -1;
     else
         return joy[componentIndex];

@@ -29,7 +29,7 @@
 
 // Set the MAC address and static IP for the TCP/IP stack
 static byte mac[] = { 0xD4, 0x40, 0x39, 0xFB, 0xE0, 0x33 };
-static IPAddress ip(192, 168, 1, 22);
+static IPAddress ip(10, 0, 0, 22);
 
 // joystick data
 static int _total_joysticks = 0;
@@ -100,7 +100,7 @@ PROGMEM static short crctab[] =
 
 
 // Networking support
-static unsigned char _packetBuffer[UDP_TX_PACKET_MAX_SIZE];
+static unsigned char _packetBuffer[100];
 static unsigned int _packetBufferSize = 0;
 static IPAddress _remoteIp;                     // holds received packet's originating IP
 static unsigned int _remotePort = 0;            // holds received packet's originating port
@@ -340,20 +340,6 @@ boolean RobotOpenClass::publish(String id, char val) {
     return false;
 }
 
-boolean RobotOpenClass::publish(String id, byte val) {
-    if (_outgoingPacketSize+3+id.length() <= 512 && !_dashboardPacketQueued) {
-        _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
-        _outgoingPacket[_outgoingPacketSize++] = 'c'; // type
-        _outgoingPacket[_outgoingPacketSize++] = 0xFF & val;  // value
-        for (int i = 0; i < id.length(); i++) {
-            _outgoingPacket[_outgoingPacketSize++] = id[i];   // identifier
-        }
-        return true;
-    }
-
-    return false;
-}
-
 boolean RobotOpenClass::publish(String id, int val) {
     if (_outgoingPacketSize+4+id.length() <= 512 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (4+id.length());  // length
@@ -425,7 +411,7 @@ void RobotOpenClass::handleData() {
     if (_packetBufferSize > 0) {
         _remotePort = Udp.remotePort();
         _remoteIp = Udp.remoteIP();
-        Udp.read(_packetBuffer, UDP_TX_PACKET_MAX_SIZE);
+        Udp.read(_packetBuffer, 100);
         parsePacket();  // Data is all set, time to parse through it
     }
 }

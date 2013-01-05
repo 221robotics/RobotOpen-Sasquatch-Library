@@ -40,7 +40,6 @@ public:
     // Overloaded calls to publish back data
     static boolean publish(String id, boolean val);
     static boolean publish(String id, char val);
-    static boolean publish(String id, byte val);
     static boolean publish(String id, int val);
     static boolean publish(String id, long val);
     static boolean publish(String id, float val);
