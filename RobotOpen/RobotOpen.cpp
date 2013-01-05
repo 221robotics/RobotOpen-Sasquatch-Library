@@ -29,7 +29,7 @@
 
 // Set the MAC address and static IP for the TCP/IP stack
 static byte mac[] = { 0xD4, 0x40, 0x39, 0xFB, 0xE0, 0x33 };
-static IPAddress ip(10, 0, 0, 22);
+static IPAddress ip(192, 168, 1, 22);
 
 // joystick data
 static int _total_joysticks = 0;
@@ -327,6 +327,20 @@ boolean RobotOpenClass::publish(String id, boolean val) {
 }
 
 boolean RobotOpenClass::publish(String id, char val) {
+    if (_outgoingPacketSize+3+id.length() <= 512 && !_dashboardPacketQueued) {
+        _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
+        _outgoingPacket[_outgoingPacketSize++] = 'c'; // type
+        _outgoingPacket[_outgoingPacketSize++] = 0xFF & val;  // value
+        for (int i = 0; i < id.length(); i++) {
+            _outgoingPacket[_outgoingPacketSize++] = id[i];   // identifier
+        }
+        return true;
+    }
+
+    return false;
+}
+
+boolean RobotOpenClass::publish(String id, byte val) {
     if (_outgoingPacketSize+3+id.length() <= 512 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'c'; // type

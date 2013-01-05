@@ -75,7 +75,7 @@ boolean ROJoystick::btnStart() {
 	return (validate(13) > 0);
 }
 boolean ROJoystick::btnLStick() {
-	return (validate(14 > 0);
+	return (validate(14) > 0);
 }
 boolean ROJoystick::btnRStick() {
 	return (validate(15) > 0);
