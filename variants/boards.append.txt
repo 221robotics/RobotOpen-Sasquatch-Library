@@ -1,6 +1,6 @@
 ##############################################################
 
-pk.name=Powder Keg
+pk.name=Sasquatch Robot Controller
 
 pk.upload.protocol=stk500v2
 pk.upload.maximum_size=258048
@@ -17,4 +17,4 @@ pk.bootloader.lock_bits=0x0F
 pk.build.mcu=atmega2560
 pk.build.f_cpu=16000000L
 pk.build.core=arduino
-pk.build.variant=powderkeg2
+pk.build.variant=sasquatch
