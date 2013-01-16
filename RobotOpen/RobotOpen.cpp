@@ -197,26 +197,27 @@ void RobotOpenClass::syncDS() {
 
         client.stop();
     }*/
-
-    // status LED
-    if (_enabled == true) {
+  
+    // detect disconnect
+    if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
+        _enabled = false;
+        // blue LED
+        digitalWrite(4, LOW);
+        digitalWrite(5, LOW);
+        digitalWrite(6, HIGH);
+	}
+    else if (_enabled == true) {
+        // green LED
         digitalWrite(4, LOW);
         digitalWrite(5, HIGH);
         digitalWrite(6, LOW);
     }
     else {
+        // red LED
         digitalWrite(4, HIGH);
         digitalWrite(5, LOW);
         digitalWrite(6, LOW);
     }
-  
-    // detect disconnect
-    if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
-        _enabled = false;
-        digitalWrite(4, LOW);
-        digitalWrite(5, LOW);
-        digitalWrite(6, HIGH);
-	}
 
     // Process any data sitting in the buffer
     handleData();
