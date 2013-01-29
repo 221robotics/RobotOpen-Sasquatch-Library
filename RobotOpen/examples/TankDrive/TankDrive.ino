@@ -28,8 +28,8 @@ void enabled() {
   rDrive.attach(24);
 
   // Constantly update PWM values with joystick values
-  lDrive.write(map(usb1.leftY(), 0, 255, 0, 180));
-  rDrive.write(map(usb1.rightY(), 0, 255, 180, 0));
+  lDrive.write(map(usb1.leftY(), 0, 255, 180, 0));
+  rDrive.write(map(usb1.rightY(), 0, 255, 0, 180));
 }
 
 
@@ -47,9 +47,8 @@ void disabled() {
  * This is also a good spot to put driver station publish code
  */
 void timedtasks() {
-  RobotOpen.publish("analog 0", analogRead(0));
-  RobotOpen.publish("analog 1", analogRead(1));
-  RobotOpen.publish("analog 2", analogRead(2));
+  RobotOpen.publish("Analog 0", analogRead(0));
+  RobotOpen.publish("Analog 1", analogRead(1));
   RobotOpen.log("some debug data...");
 }
 

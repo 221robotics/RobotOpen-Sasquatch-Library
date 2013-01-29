@@ -8,7 +8,6 @@ class ROJoystick
 {
   public:
     ROJoystick(char);
-    int getComponent(char index);
 
     byte leftX();
     byte leftY();
@@ -30,12 +29,16 @@ class ROJoystick
     boolean dPadDown();
     boolean dPadLeft();
     boolean dPadRight();
+    byte auxOne();
+    byte auxTwo();
+    byte auxThree();
+    byte auxFour();
 
     
   private:
     char _index;
 
-    int validate(char index);
+    byte validate(char index, boolean neutralOnError);
 };
 
 

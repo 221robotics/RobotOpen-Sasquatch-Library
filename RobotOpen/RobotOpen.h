@@ -38,8 +38,7 @@ public:
     static int numJoysticks();
 
     // Overloaded calls to publish back data
-    static boolean publish(String id, boolean val);
-    static boolean publish(String id, char val);
+    static boolean publish(String id, unsigned char val);
     static boolean publish(String id, int val);
     static boolean publish(String id, long val);
     static boolean publish(String id, float val);
@@ -58,9 +57,6 @@ private:
 
     // Grab UDP data
     static void handleData();
-
-    // Dumps status info back to DS
-    static void sendStatusPacket();
     
     // CRC16 checksum function
     static unsigned int calc_crc16(unsigned char *buf, unsigned short len);

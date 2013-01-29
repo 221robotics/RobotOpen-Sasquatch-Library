@@ -12,20 +12,17 @@
 #include <avr/wdt.h>
 #include "RobotOpen.h"
 
-/* Library Config */
-#define PROTOCOL_VERSION 0x03
-#define FIRMWARE_VERSION 0x01
-#define DEVICE_ID 0xFE
-
-// Port config (UDP & WEB)
+// Port config (UDP)
 #define PORT 22211
-#define WEBSERVER_PORT 80
 
 // How often to push data to the SD card
-#define LOGGING_INTERVAL_MS 250
+#define LOGGING_INTERVAL_MS 1000
 
 // The interval for timed tasks to run
-#define TIMED_TASK_INTERVAL_MS 50
+#define TIMED_TASK_INTERVAL_MS 100
+
+// The interval for publishing DS data
+#define DS_INTERVAL_MS 100
 
 // Set the MAC address and static IP for the TCP/IP stack
 static byte mac[] = { 0xD4, 0x40, 0x39, 0xFB, 0xE0, 0x33 };
@@ -56,9 +53,8 @@ static boolean _enabled = false;            // Tells us if the robot is enabled 
 static unsigned long _lastPacket = 0;       // Keeps track of the last time (ms) we received data
 static unsigned long _lastLog = 0;          // Keeps track of the last time we wrote to the log
 static unsigned long _lastTimedLoop = 0;    // Keeps track of the last time the timed loop ran
+static unsigned long _lastDSLoop = 0;       // Keeps track of the last time we published DS data
 
-// Webserver instance
-EthernetServer server(WEBSERVER_PORT);
 
 
 /* CRC lookup table */
@@ -105,7 +101,6 @@ static unsigned int _packetBufferSize = 0;
 static IPAddress _remoteIp;                     // holds received packet's originating IP
 static unsigned int _remotePort = 0;            // holds received packet's originating port
 
-
 // Class constructor
 RobotOpenClass RobotOpen;
 
@@ -131,9 +126,6 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
     Ethernet.begin(mac,ip);
     Udp.begin(PORT);
 
-    // fire up the webserver
-    server.begin();
-
     // setup serial for debugging
     Serial.begin(115200);
 
@@ -142,14 +134,13 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
 
     // enable logging to SD
     if (!SD.begin(chipSelect)) {
-        Serial.println("Card failed, or not present");
+        //Serial.println("Card failed, or not present");
     }
 
     // status LED config
     pinMode(4, OUTPUT);
     pinMode(5, OUTPUT);
     pinMode(6, OUTPUT);
-
     digitalWrite(4, LOW);
     digitalWrite(5, LOW);
     digitalWrite(6, LOW);
@@ -166,37 +157,6 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
 void RobotOpenClass::syncDS() {
     // feed watchdog
     wdt_reset();
-
-    // listen for incoming clients
-    /*EthernetClient client = server.available();
-    if (client) {
-        // an http request ends with a blank line
-        boolean currentLineIsBlank = true;
-        while (client.connected()) {
-          if (client.available()) {
-            char c = client.read();
-            if (c == '\n' && currentLineIsBlank) {
-              // send a standard http response header
-              client.println("HTTP/1.1 200 OK");
-              client.println("Content-Type: text/html");
-              client.println("Connnection: close");
-              client.println();
-              client.println("<!DOCTYPE HTML><html><h2>RobotOpen Controller</h2></html>");
-              break;
-            }
-            if (c == '\n') {
-              // you're starting a new line
-              currentLineIsBlank = true;
-            } 
-            else if (c != '\r') {
-              // you've gotten a character on the current line
-              currentLineIsBlank = false;
-            }
-          }
-        }
-
-        client.stop();
-    }*/
   
     // detect disconnect
     if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
@@ -238,6 +198,13 @@ void RobotOpenClass::syncDS() {
     // ensure we only accept values for the DS packet for one debug loop and that data was actually published
     if (_outgoingPacketSize > 1)
         _dashboardPacketQueued = true;
+
+    // publish DS data
+    if ((millis() - _lastDSLoop) > DS_INTERVAL_MS) { 
+        if (_dashboardPacketQueued)
+            publishDS();
+        _lastDSLoop = millis();
+    }
 
     // log data to SD card
     if ((millis() - _lastLog) > LOGGING_INTERVAL_MS) { 
@@ -284,50 +251,7 @@ unsigned int RobotOpenClass::calc_crc16(unsigned char *buf, unsigned short len) 
     return (crc);
 }
 
-void RobotOpenClass::sendStatusPacket() {
-    char sPacket[6];
-    sPacket[0] = 's';               // status packet
-    sPacket[1] = PROTOCOL_VERSION;  // robotopen protocol version
-
-    if (_enabled)                   // robot enable state
-        sPacket[2] = 0xFF;
-    else
-        sPacket[2] = 0xFE;
-
-    sPacket[3] = FIRMWARE_VERSION;  // User configured firmware version
-    sPacket[4] = DEVICE_ID;         // Device ID of the hardware this is running on
-
-    unsigned int uptime = (millis()/1000/60);
-    if (uptime > 255)
-        uptime = 255;
-
-    sPacket[5] = (unsigned char)(uptime & 0xFF); // uptime in minutes (maxes out at 255)
-
-    if (_remotePort != 0) {
-        Udp.beginPacket(_remoteIp, _remotePort);
-        Udp.write((uint8_t *)sPacket, 6);
-        Udp.endPacket();
-    }
-}
-
-boolean RobotOpenClass::publish(String id, boolean val) {
-    if (_outgoingPacketSize+3+id.length() <= 512 && !_dashboardPacketQueued) {
-        _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
-        _outgoingPacket[_outgoingPacketSize++] = 'b'; // type
-        if (val == 0)
-            _outgoingPacket[_outgoingPacketSize++] = 0;  // value
-        else
-            _outgoingPacket[_outgoingPacketSize++] = 0xFF;
-        for (int i = 0; i < id.length(); i++) {
-            _outgoingPacket[_outgoingPacketSize++] = id[i];   // identifier
-        }
-        return true;
-    }
-
-    return false;
-}
-
-boolean RobotOpenClass::publish(String id, char val) {
+boolean RobotOpenClass::publish(String id, unsigned char val) {
     if (_outgoingPacketSize+3+id.length() <= 512 && !_dashboardPacketQueued) {
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (3+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'c'; // type
@@ -466,10 +390,6 @@ void RobotOpenClass::parsePacket() {
               break;
         }
     }
-
-    sendStatusPacket();
-    if (_dashboardPacketQueued)
-        publishDS();
 }
 
 void RobotOpenClass::publishDS() {
