@@ -1,16 +1,16 @@
 #include <SPI.h>
 #include <SD.h>
 #include <Ethernet.h>
-#include <RobotOpen.h>
 #include <Servo.h>
+#include <RobotOpen.h>
+#include <ROEncoder.h>
+
 
 
 /* DS Joystick Setup */
 ROJoystick usb1(1);
+ROEncoder myEnc(0);
 
-// setup a servo
-Servo lDrive;
-Servo rDrive;
 
 void setup()
 {
@@ -23,13 +23,9 @@ void setup()
  * should live here that allows the robot to operate
  */
 void enabled() {
-  // Attach PWM Outputs
-  lDrive.attach(23);
-  rDrive.attach(24);
-
   // Constantly update PWM values with joystick values
-  lDrive.write(map(usb1.leftY(), 0, 255, 180, 0));
-  rDrive.write(map(usb1.rightY(), 0, 255, 0, 180));
+  RobotOpen.writePWM(0, usb1.leftY());
+  RobotOpen.writePWM(1, usb1.rightY());
 }
 
 
@@ -38,8 +34,7 @@ void enabled() {
  * to safe/disable values here
  */
 void disabled() {
-  lDrive.detach();
-  rDrive.detach();
+  // safety code
 }
 
 
@@ -49,6 +44,7 @@ void disabled() {
 void timedtasks() {
   RobotOpen.publish("Analog 0", analogRead(0));
   RobotOpen.publish("Analog 1", analogRead(1));
+  RobotOpen.publish("Encoder 0", myEnc.read());
   RobotOpen.log("some debug data...");
 }
 

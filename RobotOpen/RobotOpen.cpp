@@ -5,12 +5,14 @@
 
 #include "Arduino.h"
 #include <SPI.h>
+#include <Servo.h>
 #include <SD.h>
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include "RobotOpen.h"
+
 
 // Port config (UDP)
 #define PORT 22211
@@ -54,6 +56,11 @@ static unsigned long _lastPacket = 0;       // Keeps track of the last time (ms)
 static unsigned long _lastLog = 0;          // Keeps track of the last time we wrote to the log
 static unsigned long _lastTimedLoop = 0;    // Keeps track of the last time the timed loop ran
 static unsigned long _lastDSLoop = 0;       // Keeps track of the last time we published DS data
+
+// Outputs that must be controlled via enable state
+static Servo pwmChannels[16];
+static boolean digitalOutputChannels[22];
+static boolean firstEnableLoop = true;
 
 
 
@@ -129,6 +136,17 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
     // setup serial for debugging
     Serial.begin(115200);
 
+    // Initialize output state tracking
+    for (int i = 0; i < 22; i++) {
+        digitalOutputChannels[i] = false;
+    }
+
+    // Solenoid outputs
+    for (int i = 0; i < 8; i++) {
+        pinMode(39+i, OUTPUT);
+        digitalWrite(39+i, LOW);
+    }
+
     // output on SPI SS
     pinMode(53, OUTPUT);
 
@@ -154,6 +172,27 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
     wdt_enable(WDTO_250MS);
 }
 
+// This gets called once when the robot becomes disconnected or disabled
+void RobotOpenClass::onDisable() {
+    // PWM outputs
+    for (int i = 0; i < 16; i++) {
+        pwmChannels[i].detach();
+    }
+    // Solenoid outputs
+    for (int i = 0; i < 8; i++) {
+        digitalWrite(39+i, LOW);
+    }
+    // Digital outputs
+    for (int i = 0; i < 22; i++) {
+        if (digitalOutputChannels[i] == true) {
+            if (i < 3)
+                digitalWrite(47+i, LOW);
+            else
+                digitalWrite(51+i, LOW);
+        }
+    }
+}
+
 void RobotOpenClass::syncDS() {
     // feed watchdog
     wdt_reset();
@@ -161,22 +200,38 @@ void RobotOpenClass::syncDS() {
     // detect disconnect
     if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
         _enabled = false;
-        // blue LED
+        // NO CONNECTION -- blue LED
         digitalWrite(4, LOW);
         digitalWrite(5, LOW);
         digitalWrite(6, HIGH);
+        if (!firstEnableLoop) {
+            onDisable();
+        }
+        firstEnableLoop = true;
 	}
     else if (_enabled == true) {
-        // green LED
+        // ENABLED -- green LED
         digitalWrite(4, LOW);
         digitalWrite(5, HIGH);
         digitalWrite(6, LOW);
+        // reattach servos
+        if (firstEnableLoop) {
+            for(int i = 0; i < 16; i++) {
+                pwmChannels[i].attach(23+i);
+                pwmChannels[i].write(90);
+            }
+        }
+        firstEnableLoop = false;
     }
     else {
-        // red LED
+        // DISABLED -- red LED
         digitalWrite(4, HIGH);
         digitalWrite(5, LOW);
         digitalWrite(6, LOW);
+        if (!firstEnableLoop) {
+            onDisable();
+        }
+        firstEnableLoop = true;
     }
 
     // Process any data sitting in the buffer
@@ -207,10 +262,10 @@ void RobotOpenClass::syncDS() {
     }
 
     // log data to SD card
-    if ((millis() - _lastLog) > LOGGING_INTERVAL_MS) { 
+    /*if ((millis() - _lastLog) > LOGGING_INTERVAL_MS) { 
         logToSD();
         _lastLog = millis();
-    }
+    }*/
 }
 
 void RobotOpenClass::log(String data) {
@@ -230,17 +285,12 @@ void RobotOpenClass::log(String data) {
     }
 }
 
-void RobotOpenClass::logToSD() {
+void RobotOpenClass::logToSD(String data) {
     logFile = SD.open("datalog.txt", FILE_WRITE);
     if (logFile) {
-        logFile.print(millis());
-        logFile.print("ms -- System Alive");
-        if (_enabled)
-            logFile.println(" [ENABLED]");
-        else
-            logFile.println(" [DISABLED]");
+        logFile.println(data);
         logFile.close();
-  }
+    }
 }
 
 unsigned int RobotOpenClass::calc_crc16(unsigned char *buf, unsigned short len) {
@@ -401,6 +451,51 @@ void RobotOpenClass::publishDS() {
 
     _outgoingPacketSize = 1;
     _dashboardPacketQueued = false;
+}
+
+void RobotOpenClass::writePWM(byte channel, byte pwmVal) {
+    if (_enabled && channel < 16) {
+        pwmChannels[channel].write((int)map(pwmVal, 0, 255, 544, 2400));
+    }
+}
+
+void RobotOpenClass::writeSolenoid(byte channel, uint8_t state) {
+    if (_enabled && channel < 8) {
+        digitalWrite(39+channel, state);
+    }
+}
+
+void RobotOpenClass::writeDigital(byte channel, uint8_t state) {
+    if (_enabled && channel < 22 && digitalOutputChannels[channel] == true) {
+        if (channel < 3)
+            digitalWrite(47+channel, state);
+        else
+            digitalWrite(51+channel, state);
+    }
+}
+
+void RobotOpenClass::makeOutput(byte channel) {
+    if (channel < 22) {
+        if (channel < 3) {
+            pinMode(47+channel, OUTPUT);
+            digitalWrite(47+channel, LOW);
+        }
+        else {
+            pinMode(51+channel, OUTPUT);
+            digitalWrite(51+channel, LOW);
+        }
+        digitalOutputChannels[channel] = true;
+    }
+}
+
+void RobotOpenClass::makeInput(byte channel) {
+    if (channel < 22) {
+        if (channel < 3)
+            pinMode(47+channel, INPUT);
+        else
+            pinMode(51+channel, INPUT);
+        digitalOutputChannels[channel] = false;
+    }
 }
 
 boolean RobotOpenClass::enabled() {

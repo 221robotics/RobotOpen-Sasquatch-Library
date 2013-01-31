@@ -24,8 +24,8 @@
  */
 
 
-#ifndef Encoder_h_
-#define Encoder_h_
+#ifndef ROEncoder_h_
+#define ROEncoder_h_
 
 #include "Arduino.h"
 
@@ -34,19 +34,19 @@
 #define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
 #define DIRECT_PIN_READ(base, mask)     (((*(base)) & (mask)) ? 1 : 0)
 
+
 #define ENCODER_USE_INTERRUPTS
 #define ENCODER_ARGLIST_SIZE CORE_NUM_INTERRUPT
-
-// Powder Keg
 #define CORE_NUM_INTERRUPT	8
-#define CORE_INT0_PIN		19
-#define CORE_INT1_PIN		22
-#define CORE_INT2_PIN		21 // I2C SCL -- TAKEN
-#define CORE_INT3_PIN		20 // I2C SDA -- TAKEN
-#define CORE_INT4_PIN		71
-#define CORE_INT5_PIN		72
-#define CORE_INT6_PIN		23
-#define CORE_INT7_PIN 		70
+#define CORE_INT0_PIN		7 // I2C SDA -- TAKEN
+#define CORE_INT1_PIN		8 // I2C SCL -- TAKEN
+#define CORE_INT2_PIN		11
+#define CORE_INT3_PIN		12
+#define CORE_INT4_PIN		13
+#define CORE_INT5_PIN		14
+#define CORE_INT6_PIN		15
+#define CORE_INT7_PIN		16
+
 
 
 
@@ -63,10 +63,17 @@ typedef struct {
 	int32_t                position;
 } Encoder_internal_state_t;
 
-class Encoder
+class ROEncoder
 {
 public:
-	Encoder(uint8_t pin1, uint8_t pin2) {
+	ROEncoder(uint8_t encoderNum) {
+		if (encoderNum > 5) {
+			encoderNum = 0;
+		}
+
+		uint8_t pin1 = 11+encoderNum;
+		uint8_t pin2 = 17+encoderNum;
+
 		#ifdef INPUT_PULLUP
 		pinMode(pin1, INPUT_PULLUP);
 		pinMode(pin2, INPUT_PULLUP);
@@ -420,6 +427,7 @@ public:
 	#endif
 
 };
+
 
 
 

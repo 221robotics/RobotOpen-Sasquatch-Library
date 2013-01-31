@@ -33,7 +33,6 @@ class ROJoystick
     byte auxTwo();
     byte auxThree();
     byte auxFour();
-
     
   private:
     char _index;

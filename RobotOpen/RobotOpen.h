@@ -10,6 +10,7 @@
 #include <ROJoystick.h>
 #include "IPAddress.h"
 
+
 // Solenoid Constants
 #define ON 0xFF
 #define OFF 0x00
@@ -37,6 +38,9 @@ public:
     // How many joysticks are being received
     static int numJoysticks();
 
+    // Log to SD card
+    static void logToSD(String);
+
     // Overloaded calls to publish back data
     static boolean publish(String id, unsigned char val);
     static boolean publish(String id, int val);
@@ -45,15 +49,21 @@ public:
 
     static char* getJoystick(char index);
 
+    static void writePWM(byte channel, byte pwmVal);
+    static void writeSolenoid(byte channel, uint8_t state);
+    static void writeDigital(byte channel, uint8_t state);
+    static void makeOutput(byte channel);
+    static void makeInput(byte channel);
+
 private:
     // Dumps data back to the DS
     static void publishDS();
 
-    // Parse out a DS packet
-    static void parsePacket();
+    // This gets called once when the robot becomes disconnected or disabled
+    static void onDisable();
 
     // Parse out a DS packet
-    static void logToSD();
+    static void parsePacket();
 
     // Grab UDP data
     static void handleData();
