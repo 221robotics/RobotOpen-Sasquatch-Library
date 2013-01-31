@@ -8,6 +8,10 @@
 
 #include "Arduino.h"
 #include <ROJoystick.h>
+#include <ROEncoder.h>
+#include <ROPWM.h>
+#include <RODashboard.h>
+#include <ROSolenoid.h>
 #include "IPAddress.h"
 
 

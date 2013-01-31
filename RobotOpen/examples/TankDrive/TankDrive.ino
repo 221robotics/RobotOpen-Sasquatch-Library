@@ -3,13 +3,15 @@
 #include <Ethernet.h>
 #include <Servo.h>
 #include <RobotOpen.h>
-#include <ROEncoder.h>
 
 
 
 /* DS Joystick Setup */
 ROJoystick usb1(1);
 ROEncoder myEnc(0);
+ROPWM leftDrive(0);
+ROPWM rightDrive(1);
+ROSolenoid giantArm(0);
 
 
 void setup()
@@ -24,8 +26,9 @@ void setup()
  */
 void enabled() {
   // Constantly update PWM values with joystick values
-  RobotOpen.writePWM(0, usb1.leftY());
-  RobotOpen.writePWM(1, usb1.rightY());
+  leftDrive.write(usb1.leftY());
+  rightDrive.write(usb1.rightY());
+  giantArm.on();
 }
 
 
@@ -42,10 +45,10 @@ void disabled() {
  * This is also a good spot to put driver station publish code
  */
 void timedtasks() {
-  RobotOpen.publish("Analog 0", analogRead(0));
-  RobotOpen.publish("Analog 1", analogRead(1));
-  RobotOpen.publish("Encoder 0", myEnc.read());
-  RobotOpen.log("some debug data...");
+  RODashboard.publish("Analog 0", analogRead(0));
+  RODashboard.publish("Analog 1", analogRead(1));
+  RODashboard.publish("Encoder 0", myEnc.read());
+  RODashboard.debug("Some debug data...");
 }
 
 
