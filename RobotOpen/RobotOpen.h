@@ -12,6 +12,10 @@
 #include <ROPWM.h>
 #include <RODashboard.h>
 #include <ROSolenoid.h>
+#include <ROBlackBox.h>
+#include <RODigitalIO.h>
+#include <ROAnalog.h>
+#include <ROStatus.h>
 #include "IPAddress.h"
 
 
@@ -58,6 +62,7 @@ public:
     static void writeDigital(byte channel, uint8_t state);
     static void makeOutput(byte channel);
     static void makeInput(byte channel);
+    static void setPullup(byte channel, boolean pullUp);
 
 private:
     // Dumps data back to the DS

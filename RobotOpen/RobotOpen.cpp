@@ -498,6 +498,18 @@ void RobotOpenClass::makeInput(byte channel) {
     }
 }
 
+void RobotOpenClass::setPullup(byte channel, boolean pullUp) {
+    if (channel < 22 && digitalOutputChannels[channel] == false) {
+        uint8_t state = LOW;
+        if (pullUp)
+            state = HIGH;
+        if (channel < 3)
+            digitalWrite(47+channel, state);
+        else
+            digitalWrite(51+channel, state);
+    }
+}
+
 boolean RobotOpenClass::enabled() {
     return _enabled;
 }
