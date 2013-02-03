@@ -36,16 +36,17 @@
 
 
 #define ENCODER_USE_INTERRUPTS
-#define ENCODER_ARGLIST_SIZE CORE_NUM_INTERRUPT
+#define ENCODER_ARGLIST_SIZE 8
 #define CORE_NUM_INTERRUPT	8
-#define CORE_INT0_PIN		7 // I2C SDA -- TAKEN
-#define CORE_INT1_PIN		8 // I2C SCL -- TAKEN
-#define CORE_INT2_PIN		11
-#define CORE_INT3_PIN		12
-#define CORE_INT4_PIN		13
-#define CORE_INT5_PIN		14
-#define CORE_INT6_PIN		15
-#define CORE_INT7_PIN		16
+#define CORE_INT0_PIN		11 		//INT4
+#define CORE_INT1_PIN		12 		//INT5
+#define CORE_INT2_PIN		8 		//INT0
+#define CORE_INT3_PIN		7 		//INT1
+#define CORE_INT4_PIN		15 		//INT2
+#define CORE_INT5_PIN		16 		//INT3
+#define CORE_INT6_PIN		13
+#define CORE_INT7_PIN		14
+
 
 
 
@@ -74,15 +75,14 @@ public:
 		uint8_t pin1 = 11+encoderNum;
 		uint8_t pin2 = 17+encoderNum;
 
-		#ifdef INPUT_PULLUP
-		pinMode(pin1, INPUT_PULLUP);
-		pinMode(pin2, INPUT_PULLUP);
-		#else
 		pinMode(pin1, INPUT);
-		digitalWrite(pin1, HIGH);
 		pinMode(pin2, INPUT);
+
+		#ifdef ENCODER_PULLUP
+		digitalWrite(pin1, HIGH);
 		digitalWrite(pin2, HIGH);
 		#endif
+		
 		encoder.pin1_register = PIN_TO_BASEREG(pin1);
 		encoder.pin1_bitmask = PIN_TO_BITMASK(pin1);
 		encoder.pin2_register = PIN_TO_BASEREG(pin2);
