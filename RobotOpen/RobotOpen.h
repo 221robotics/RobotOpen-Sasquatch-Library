@@ -16,6 +16,7 @@
 #include <RODigitalIO.h>
 #include <ROAnalog.h>
 #include <ROStatus.h>
+#include <ROTimer.h>
 #include "IPAddress.h"
 
 

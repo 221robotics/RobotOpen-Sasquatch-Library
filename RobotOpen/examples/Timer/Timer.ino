@@ -6,15 +6,18 @@
 
 
 
-/* I/O Setup */
-ROAnalog analogZero(0);   	// Analog Channel 0
-ROAnalog analogOne(1);		// Analog Channel 1
+/* Timer Setup */
+ROTimer stepOne;   	// First timer step
+ROTimer stepTwo;	// Second timer step
+ROTimer loopMe;		// A looping timer
 
 
 void setup()
 {
   /* Initiate comms */
   RobotOpen.begin(&enabled, &disabled, &timedtasks);
+  stepOne.queue(0);
+  loopMe.queue(0);
 }
 
 
@@ -38,8 +41,18 @@ void disabled() {
  * This is also a good spot to put driver station publish code
  */
 void timedtasks() {
-  RODashboard.publish("Analog0", analogZero.read());
-  RODashboard.publish("Analog1", analogOne.read());
+  if (stepOne.ready()) {
+  	RODashboard.debug("Step One!");
+  	stepTwo.queue(1000);
+  }
+  if (stepTwo.ready()) {
+  	RODashboard.debug("Step Two!");
+  	stepOne.queue(1000);
+  }
+  if (loopMe.ready()) {
+  	RODashboard.debug("I looped!");
+  	loopMe.queue(5000);
+  }
   RODashboard.publish("Uptime Seconds", ROStatus.uptimeSeconds());
 }
 
