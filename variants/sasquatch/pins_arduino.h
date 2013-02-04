@@ -30,7 +30,7 @@
 #define NUM_DIGITAL_PINS            69
 #define NUM_ANALOG_INPUTS           12
 #define analogInputToDigitalPin(p)  ((p < 12) ? (p) + 73 : -1)
-#define digitalPinHasPWM(p)         (((p) >= 4 && (p) <= 72))
+
 
 static const uint8_t SS   = 53;
 static const uint8_t MOSI = 51;
