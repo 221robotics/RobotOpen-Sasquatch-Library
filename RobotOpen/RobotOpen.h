@@ -19,9 +19,6 @@
 #include "IPAddress.h"
 
 
-// Solenoid Constants
-#define ON 0xFF
-#define OFF 0x00
 
 typedef void LoopCallback();
 

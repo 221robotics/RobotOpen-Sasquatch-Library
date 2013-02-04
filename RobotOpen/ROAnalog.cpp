@@ -8,8 +8,5 @@ ROAnalog::ROAnalog(uint8_t channel)
 }
 
 int ROAnalog::read() {
-	if (_channel < 12)
-		return analogRead(_channel);
-	else
-		return 0;
+	return analogRead(_channel);
 }

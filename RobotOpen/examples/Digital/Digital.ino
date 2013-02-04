@@ -7,11 +7,9 @@
 
 
 /* I/O Setup */
-ROJoystick usb1(1);         // Joystick #1
-ROEncoder leftEncoder(0);   // Encoder Channel 0
-ROEncoder rightEncoder(1);  // Encoder Channel 1
-ROPWM leftDrive(0);
-ROPWM rightDrive(1);
+ROJoystick usb1(1);              // Joystick #1
+RODigitalIO dig0In(0, INPUT);    // DIO channel 0, input mode
+RODigitalIO dig1Out(1, OUTPUT);  // DIO channel 1, output mode
 
 
 void setup()
@@ -25,11 +23,10 @@ void setup()
  * should live here that allows the robot to operate
  */
 void enabled() {
-  // Constantly update PWM values with joystick values
-  // Analog sticks feed back values from 0-255
-  // 255 - usb1.leftY() to invert a drive
-  leftDrive.write(usb1.leftY());
-  rightDrive.write(usb1.rightY());
+  if (usb1.btnA())
+    dig1Out.on();
+  else
+    dig1Out.off();
 }
 
 
@@ -45,8 +42,8 @@ void disabled() {
  * This is also a good spot to put driver station publish code
  */
 void timedtasks() {
-  RODashboard.publish("Left Encoder", leftEncoder.read());
-  RODashboard.publish("Right Encoder", rightEncoder.read());
+  if (dig0In.read())
+    RODashboard.debug("Digital 0 High!");
   RODashboard.publish("Uptime Seconds", ROStatus.uptimeSeconds());
 }
 

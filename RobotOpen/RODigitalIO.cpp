@@ -16,12 +16,12 @@ void RODigitalIO::off() {
 	RobotOpen.writeDigital(_channel, LOW);
 }
 
-uint8_t RODigitalIO::read() {
+boolean RODigitalIO::read() {
 	if (_channel < 3) {
-        return digitalRead(47+_channel);
+		return ((digitalRead(47+_channel) == HIGH) ? true : false);
     }
     else {
-        return digitalRead(51+_channel);
+        return ((digitalRead(51+_channel) == HIGH) ? true : false);
     }
 }
 

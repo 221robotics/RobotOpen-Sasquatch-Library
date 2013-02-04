@@ -11,7 +11,7 @@ class RODigitalIO
 
     void on();
 	void off();
-	uint8_t read();
+	boolean read();
 	void pullUp();
 	void allowFloat();
 	void setMode(uint8_t);

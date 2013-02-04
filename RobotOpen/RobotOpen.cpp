@@ -53,7 +53,6 @@ static unsigned int _outgoingPacketSize = 1;
 // Robot specific stuff
 static boolean _enabled = false;            // Tells us if the robot is enabled or disabled
 static unsigned long _lastPacket = 0;       // Keeps track of the last time (ms) we received data
-static unsigned long _lastLog = 0;          // Keeps track of the last time we wrote to the log
 static unsigned long _lastTimedLoop = 0;    // Keeps track of the last time the timed loop ran
 static unsigned long _lastDSLoop = 0;       // Keeps track of the last time we published DS data
 
@@ -206,8 +205,8 @@ void RobotOpenClass::syncDS() {
         digitalWrite(6, HIGH);
         if (!firstEnableLoop) {
             onDisable();
+            firstEnableLoop = true;
         }
-        firstEnableLoop = true;
 	}
     else if (_enabled == true) {
         // ENABLED -- green LED
@@ -220,8 +219,8 @@ void RobotOpenClass::syncDS() {
                 pwmChannels[i].attach(23+i);
                 pwmChannels[i].write(90);
             }
+            firstEnableLoop = false;
         }
-        firstEnableLoop = false;
     }
     else {
         // DISABLED -- red LED
@@ -230,8 +229,8 @@ void RobotOpenClass::syncDS() {
         digitalWrite(6, LOW);
         if (!firstEnableLoop) {
             onDisable();
+            firstEnableLoop = true;
         }
-        firstEnableLoop = true;
     }
 
     // Process any data sitting in the buffer
@@ -260,12 +259,6 @@ void RobotOpenClass::syncDS() {
             publishDS();
         _lastDSLoop = millis();
     }
-
-    // log data to SD card
-    /*if ((millis() - _lastLog) > LOGGING_INTERVAL_MS) { 
-        logToSD();
-        _lastLog = millis();
-    }*/
 }
 
 void RobotOpenClass::log(String data) {
@@ -286,7 +279,7 @@ void RobotOpenClass::log(String data) {
 }
 
 void RobotOpenClass::logToSD(String data) {
-    logFile = SD.open("datalog.txt", FILE_WRITE);
+    logFile = SD.open("robolog.txt", FILE_WRITE);
     if (logFile) {
         logFile.println(data);
         logFile.close();
