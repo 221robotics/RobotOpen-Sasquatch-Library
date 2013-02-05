@@ -17,6 +17,7 @@
 #include <ROAnalog.h>
 #include <ROStatus.h>
 #include <ROTimer.h>
+#include <ROParameter.h>
 #include "IPAddress.h"
 
 
@@ -62,6 +63,8 @@ public:
     static void makeInput(byte channel);
     static void setPullup(byte channel, boolean pullUp);
 
+    static void addParameter(ROParameter* param);
+
 private:
     // Dumps data back to the DS
     static void publishDS();
@@ -74,6 +77,12 @@ private:
 
     // Grab UDP data
     static void handleData();
+
+    // Update parameter in EEPROM
+    static void writeParameter(uint8_t location, unsigned int firstByte);
+
+    // Send all parameters to DS
+    static void sendParameters();
     
     // CRC16 checksum function
     static unsigned int calc_crc16(unsigned char *buf, unsigned short len);

@@ -9,6 +9,7 @@
 #include <SD.h>
 #include <Ethernet.h>
 #include <EthernetUdp.h>
+#include <EEPROM.h>
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include "RobotOpen.h"
@@ -59,6 +60,8 @@ static unsigned long _lastDSLoop = 0;       // Keeps track of the last time we p
 // Outputs that must be controlled via enable state
 static Servo pwmChannels[16];
 static boolean digitalOutputChannels[22];
+static ROParameter* params[100];
+static unsigned char paramsLength = 0;
 static boolean firstEnableLoop = true;
 
 
@@ -102,7 +105,7 @@ PROGMEM static short crctab[] =
 
 
 // Networking support
-static unsigned char _packetBuffer[100];
+static unsigned char _packetBuffer[512];
 static unsigned int _packetBufferSize = 0;
 static IPAddress _remoteIp;                     // holds received packet's originating IP
 static unsigned int _remotePort = 0;            // holds received packet's originating port
@@ -391,6 +394,8 @@ void RobotOpenClass::parsePacket() {
     if (calc_crc16(_packetBuffer, _packetBufferSize - 2) == crc16_recv) {
         // control packet is 'c' + joystick data + crc16
         int frameLength = (_packetBufferSize - 3);
+        int numParameters;
+        int paramCount = 0;
 
         // VALID PACKET
         switch (_packetBuffer[0]) {
@@ -426,6 +431,17 @@ void RobotOpenClass::parsePacket() {
                     break;
                 }      
               }
+              break;
+
+            case 's': // set parameter packet
+              numParameters = frameLength / 5;
+              for (paramCount = 0; paramCount < numParameters; paramCount++) {
+                writeParameter((uint8_t)_packetBuffer[(i*5)+1], ((i*5)+2));
+              }
+              break;
+
+            case 'g': // get parameters packet
+              sendParameters();
               break;
 
             default:
@@ -501,6 +517,55 @@ void RobotOpenClass::setPullup(byte channel, boolean pullUp) {
         else
             digitalWrite(51+channel, state);
     }
+}
+
+void RobotOpenClass::addParameter(ROParameter* param) {
+    params[paramsLength++] = param;
+}
+
+void RobotOpenClass::writeParameter(uint8_t location, unsigned int firstByte) {
+    if (!_enabled) {
+        EEPROM.write((location * 4), _packetBuffer[firstByte]);
+        EEPROM.write((location * 4) + 1, _packetBuffer[firstByte+1]);
+        EEPROM.write((location * 4) + 2, _packetBuffer[firstByte+2]);
+        EEPROM.write((location * 4) + 3, _packetBuffer[firstByte+3]);
+    }
+}
+
+void RobotOpenClass::sendParameters() {
+    _outgoingPacket[0] = 'r';
+    _outgoingPacketSize = 1;
+
+    for (int i = 0; i < paramsLength; i++) {
+        ROParameter prm = *params[i];
+
+        if (_outgoingPacketSize+7+prm.label.length() <= 512) {
+            _outgoingPacket[_outgoingPacketSize++] = 0xFF & (7+prm.label.length());         // length
+            _outgoingPacket[_outgoingPacketSize++] = 0xFF & (prm.location);                 // address (0-99)
+            _outgoingPacket[_outgoingPacketSize++] = prm.type;                              // type
+            _outgoingPacket[_outgoingPacketSize++] = EEPROM.read(prm.location * 4);         // val1
+            _outgoingPacket[_outgoingPacketSize++] = EEPROM.read((prm.location * 4) + 1);   // val2
+            _outgoingPacket[_outgoingPacketSize++] = EEPROM.read((prm.location * 4) + 2);   // val3
+            _outgoingPacket[_outgoingPacketSize++] = EEPROM.read((prm.location * 4) + 3);   // val4
+            for (int j = 0; j < prm.label.length(); j++) {
+                _outgoingPacket[_outgoingPacketSize++] = prm.label[j];                      // identifier
+            }
+        } else {
+            break;
+        }
+    }
+
+    // xmit
+    if (_remotePort != 0) {
+        Udp.beginPacket(_remoteIp, _remotePort);
+        Udp.write((uint8_t *)_outgoingPacket, _outgoingPacketSize);
+        Udp.endPacket();
+    }
+
+    // reset the outgoing packet vars
+    _outgoingPacketSize = 1;
+    _dashboardPacketQueued = false;
+    _outgoingPacket[0] = 'd';
 }
 
 boolean RobotOpenClass::enabled() {
