@@ -1,0 +1,22 @@
+# See: http://code.google.com/p/arduino/wiki/Platforms
+
+##############################################################
+
+sasquatch.name=Sasquatch Robot Controller
+
+sasquatch.upload.protocol=stk500v2
+sasquatch.upload.maximum_size=258048
+sasquatch.upload.speed=115200
+
+sasquatch.bootloader.low_fuses=0xFF
+sasquatch.bootloader.high_fuses=0xD8
+sasquatch.bootloader.extended_fuses=0xFD
+sasquatch.bootloader.path=stk500v2
+sasquatch.bootloader.file=stk500boot_v2_mega2560.hex
+sasquatch.bootloader.unlock_bits=0x3F
+sasquatch.bootloader.lock_bits=0x0F
+
+sasquatch.build.mcu=atmega2560
+sasquatch.build.f_cpu=16000000L
+sasquatch.build.core=arduino:arduino
+sasquatch.build.variant=sasquatch
