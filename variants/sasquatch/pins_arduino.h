@@ -152,11 +152,11 @@ const uint8_t PROGMEM digital_pin_to_port_PGM[] = {
 	PL  , // PL2					RO41 - S2
  	PL  , // PL6					RO42 - S3
 	PL  , // PL7					RO43 - S4
-	PL  , // PD7					RO44 - S5
-	PG  , // PG2					RO45 - S6
+	PG  , // PG2					RO44 - S5
+	PD  , // PD7					RO45 - S6
 	PJ  , // PJ7					RO46 - S7
 	PG  , // PG0					RO47 - DIO0
-	PH  , // PG1					RO48 - DIO1
+	PG  , // PG1					RO48 - DIO1
 	PC  , // PC0					RO49 - DIO2
 	PB  , // PB3					RO50 - SPI MISO
 	PB  , // PB2					RO51 - SPI MOSI
@@ -243,8 +243,8 @@ const uint8_t PROGMEM digital_pin_to_bit_mask_PGM[] = {
 	_BV( 2 )	, // PL2					RO41 - S2
  	_BV( 6 )	, // PL6					RO42 - S3
 	_BV( 7 )	, // PL7					RO43 - S4
-	_BV( 7 )	, // PD7					RO44 - S5
-	_BV( 2 )	, // PG2					RO45 - S6
+	_BV( 2 )	, // PG2					RO44 - S5
+	_BV( 7 )	, // PD7					RO45 - S6
 	_BV( 7 )	, // PJ7					RO46 - S7
 	_BV( 0 )	, // PG0					RO47 - DIO0
 	_BV( 1 )	, // PG1					RO48 - DIO1
@@ -334,8 +334,8 @@ const uint8_t PROGMEM digital_pin_to_timer_PGM[] = {
 	NOT_ON_TIMER, // PL2					RO41 - S2
  	NOT_ON_TIMER, // PL6					RO42 - S3
 	NOT_ON_TIMER, // PL7					RO43 - S4
-	NOT_ON_TIMER, // PD7					RO44 - S5
-	NOT_ON_TIMER, // PG2					RO45 - S6
+	NOT_ON_TIMER, // PG2					RO44 - S5
+	NOT_ON_TIMER, // PD7					RO45 - S6
 	NOT_ON_TIMER, // PJ7					RO46 - S7
 	NOT_ON_TIMER, // PG0					RO47 - DIO0
 	NOT_ON_TIMER, // PG1					RO48 - DIO1

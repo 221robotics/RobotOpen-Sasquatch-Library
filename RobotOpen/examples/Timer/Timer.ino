@@ -2,6 +2,7 @@
 #include <SD.h>
 #include <Ethernet.h>
 #include <Servo.h>
+#include <EEPROM.h>
 #include <RobotOpen.h>
 
 
