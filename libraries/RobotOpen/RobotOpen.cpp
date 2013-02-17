@@ -436,7 +436,7 @@ void RobotOpenClass::parsePacket() {
             case 's': // set parameter packet
               numParameters = frameLength / 5;
               for (paramCount = 0; paramCount < numParameters; paramCount++) {
-                writeParameter((uint8_t)_packetBuffer[(i*5)+1], ((i*5)+2));
+                writeParameter((uint8_t)_packetBuffer[(paramCount*5)+1], ((paramCount*5)+2));
               }
               break;
 
