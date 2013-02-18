@@ -344,14 +344,19 @@ boolean RobotOpenClass::publish(String id, long val) {
 }
 
 boolean RobotOpenClass::publish(String id, float val) {
+    union u_tag {
+        byte b[4];
+        float fval;
+    } u;
+    u.fval = val;
+
     if (_outgoingPacketSize+6+id.length() <= 512 && !_dashboardPacketQueued) {
-        long conVal = (long)val;
         _outgoingPacket[_outgoingPacketSize++] = 0xFF & (6+id.length());  // length
         _outgoingPacket[_outgoingPacketSize++] = 'f'; // type
-        _outgoingPacket[_outgoingPacketSize++] = (conVal >> 24) & 0xFF;  // value
-        _outgoingPacket[_outgoingPacketSize++] = (conVal >> 16) & 0xFF;  // value
-        _outgoingPacket[_outgoingPacketSize++] = (conVal >> 8) & 0xFF;  // value
-        _outgoingPacket[_outgoingPacketSize++] = conVal & 0xFF;  // value
+        _outgoingPacket[_outgoingPacketSize++] = u.b[3];  // value
+        _outgoingPacket[_outgoingPacketSize++] = u.b[2];  // value
+        _outgoingPacket[_outgoingPacketSize++] = u.b[1];  // value
+        _outgoingPacket[_outgoingPacketSize++] = u.b[0];  // value
         for (int i = 0; i < id.length(); i++) {
             _outgoingPacket[_outgoingPacketSize++] = id[i];   // identifier
         }

@@ -22,19 +22,24 @@ char ROParameter::getChar() {
 }
 
 int ROParameter::getInt() {
-	byte loByte = EEPROM.read(location * 4);
-  byte hiByte = EEPROM.read((location * 4) + 1);
+	byte hiByte = EEPROM.read(location * 4);
+  byte loByte = EEPROM.read((location * 4) + 1);
 
   return ((loByte << 0) & 0xFF) + ((hiByte << 8) & 0xFF00);
 }
 
 long ROParameter::getLong() {
-	byte b1 = EEPROM.read(location * 4);
-  byte b2 = EEPROM.read((location * 4) + 1);
-  byte b3 = EEPROM.read((location * 4) + 2);
-  byte b4 = EEPROM.read((location * 4) + 3);
+  union l_tag {
+    byte b[4];
+    long lval;
+  } l;
 
-  return ((b1 << 0) & 0xFF) + ((b2 << 8) & 0xFF00) + ((b3 << 16) & 0xFF0000) + ((b4 << 24) & 0xFF000000);
+	l.b[3] = EEPROM.read(location * 4);
+  l.b[2] = EEPROM.read((location * 4) + 1);
+  l.b[1] = EEPROM.read((location * 4) + 2);
+  l.b[0] = EEPROM.read((location * 4) + 3);
+
+  return l.lval;
 }
 
 float ROParameter::getFloat() {
@@ -44,10 +49,10 @@ float ROParameter::getFloat() {
     float fval;
   } u;
 
-  u.b[0] = EEPROM.read(location * 4);
-  u.b[1] = EEPROM.read((location * 4) + 1);
-  u.b[2] = EEPROM.read((location * 4) + 2);
-  u.b[3] = EEPROM.read((location * 4) + 3);
+  u.b[3] = EEPROM.read(location * 4);
+  u.b[2] = EEPROM.read((location * 4) + 1);
+  u.b[1] = EEPROM.read((location * 4) + 2);
+  u.b[0] = EEPROM.read((location * 4) + 3);
 
   return u.fval;
 }
