@@ -5,8 +5,9 @@ ROStatusClass ROStatus;
 
 
 
-int ROStatusClass::batteryReading() {
-    return analogRead(12);
+float ROStatusClass::batteryReading() {
+	// sasquatch has a 1/6 voltage divider on BMC pin
+    return ((analogRead(12) * (5.0 / 1023.0)) * 6);
 }
 
 boolean ROStatusClass::isEnabled() {
