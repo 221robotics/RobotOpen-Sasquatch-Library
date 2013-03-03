@@ -22,10 +22,15 @@ char ROParameter::getChar() {
 }
 
 int ROParameter::getInt() {
-	byte hiByte = EEPROM.read(location * 4);
-  byte loByte = EEPROM.read((location * 4) + 1);
+	union i_tag {
+    byte b[2];
+    int ival;
+  } i;
 
-  return ((loByte << 0) & 0xFF) + ((hiByte << 8) & 0xFF00);
+  i.b[1] = EEPROM.read(location * 4);
+  l.b[0] = EEPROM.read((location * 4) + 1);
+
+  return i.ival;
 }
 
 long ROParameter::getLong() {
