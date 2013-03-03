@@ -28,7 +28,7 @@ int ROParameter::getInt() {
   } i;
 
   i.b[1] = EEPROM.read(location * 4);
-  l.b[0] = EEPROM.read((location * 4) + 1);
+  i.b[0] = EEPROM.read((location * 4) + 1);
 
   return i.ival;
 }
