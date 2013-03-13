@@ -64,6 +64,8 @@ static ROParameter* params[100];
 static unsigned char paramsLength = 0;
 static boolean firstEnableLoop = true;
 
+static boolean acceptingDebugData = false;
+
 
 
 /* CRC lookup table */
@@ -246,10 +248,13 @@ void RobotOpenClass::syncDS() {
         whileDisabled();
 
     // run timed tasks
-    if ((millis() - _lastTimedLoop) > TIMED_TASK_INTERVAL_MS) { 
+    if ((millis() - _lastTimedLoop) > TIMED_TASK_INTERVAL_MS) {
+        acceptingDebugData = true;
         if (whileTimedTasks)
             whileTimedTasks();
         _lastTimedLoop = millis();
+    } else {
+        acceptingDebugData = false;
     }
 
     // ensure we only accept values for the DS packet for one debug loop and that data was actually published
@@ -265,19 +270,21 @@ void RobotOpenClass::syncDS() {
 }
 
 void RobotOpenClass::log(String data) {
-    int dataLength = data.length();
-    char logData[dataLength+1];
+    if (acceptingDebugData) {
+        int dataLength = data.length();
+        char logData[dataLength+1];
 
-    logData[0] = 'p';
+        logData[0] = 'p';
 
-    for (int i=0; i < dataLength; i++) {
-        logData[i+1] = data[i];
-    }
+        for (int i=0; i < dataLength; i++) {
+            logData[i+1] = data[i];
+        }
 
-    if (_remotePort != 0) {
-        Udp.beginPacket(_remoteIp, _remotePort);
-        Udp.write((uint8_t *)logData, dataLength+1);
-        Udp.endPacket();
+        if (_remotePort != 0) {
+            Udp.beginPacket(_remoteIp, _remotePort);
+            Udp.write((uint8_t *)logData, dataLength+1);
+            Udp.endPacket();
+        }
     }
 }
 
