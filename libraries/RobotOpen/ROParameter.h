@@ -10,22 +10,76 @@
 #define FLOAT 'f'
 
 
+// generic definition
 class ROParameter
 {
   public:
-    ROParameter(String, char, uint8_t);
+    String label;
+    uint8_t type;
+    uint8_t location;
+};
 
-    boolean getBool();
-    char getChar();
-    int getInt();
-    long getLong();
-    float getFloat();
+
+class ROBoolParameter
+{
+  public:
+    ROBoolParameter(String, uint8_t);
+
+    boolean get();
 
     String label;
     uint8_t type;
     uint8_t location;
 };
 
+class ROCharParameter
+{
+  public:
+    ROCharParameter(String, uint8_t);
+
+    char get();
+
+    String label;
+    uint8_t type;
+    uint8_t location;
+};
+
+class ROIntParameter
+{
+  public:
+    ROIntParameter(String, uint8_t);
+
+    int get();
+
+    String label;
+    uint8_t type;
+    uint8_t location;
+};
+
+class ROLongParameter
+{
+  public:
+    ROLongParameter(String, uint8_t);
+
+    long get();
+
+    String label;
+    uint8_t type;
+    uint8_t location;
+};
+
+
+class ROFloatParameter
+{
+  public:
+    ROFloatParameter(String, uint8_t);
+
+    float get();
+
+    String label;
+    uint8_t type;
+    uint8_t location;
+};
 
 
 #endif

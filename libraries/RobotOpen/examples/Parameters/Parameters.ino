@@ -8,7 +8,7 @@
 
 
 /* Parameter Setup */
-ROParameter remoteVal("Remote Value", CHAR, 0);   	// A value that can be updated remotely
+ROCharParameter remoteVal("Remote Value", 0);   	// A value that can be updated remotely
 
 
 void setup()
@@ -38,7 +38,7 @@ void disabled() {
  * This is also a good spot to put driver station publish code
  */
 void timedtasks() {
-  RODashboard.publish("Remote Value", remoteVal.getChar());
+  RODashboard.publish("Remote Value", remoteVal.get());
   RODashboard.publish("Uptime Seconds", ROStatus.uptimeSeconds());
 }
 
