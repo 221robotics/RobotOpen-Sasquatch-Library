@@ -67,13 +67,13 @@ void ROWebServer::webserver_loop()
 			if(c == '\n' && line_blank) // blank newline, http request done
 			{
 				// send top of html page
-				for(unsigned int i = 0; i < sizeof(http_open); i++)
+				for(unsigned int i = 0; i < (sizeof(http_open)/sizeof(http_open[0])); i++)
 				{
 					client.print(http_open[i]);
 				}
 				
 				// send out our data
-				for(int i = 0; fields[i] != (char*)"" || i < 23; i++)
+				for(int i = 0; fields[i] != (char*)"" && i < 23; i++)
 				{
 					client.print(fields[i]);
 					client.print(": ");
@@ -96,7 +96,7 @@ void ROWebServer::webserver_loop()
 		}
 		client.stop(); //Disconnect from client
 
-		for(unsigned int i = 0; i < (sizeof(fields)/sizeof(fields[1])); i++)
+		for(unsigned int i = 0; i < (sizeof(fields)/sizeof(fields[0])); i++)
 		{
 			// Clears out fields so that add_fields can be used in loop
 			fields[i] = (char*)"";
