@@ -8,9 +8,11 @@ class ROWebServer
 {
 	public:
 	ROWebServer();
+	ROWebServer(int port);
+	
 	~ROWebServer();
 
-	int add_field(char *label, char *data);
+	int add_field(const char *label, const char *data);
 
 	void begin_server();
 	void webserver_loop();
