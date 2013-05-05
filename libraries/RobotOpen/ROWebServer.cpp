@@ -5,6 +5,8 @@
 const char *ROWebServer::http_open[7] = {"HTTP/1.1 200 OK\n", "Content-Type: text/html\n", "Connection: close\n", "\n", \
 							   "<!DOCTYPE HTML>\n", "<html>\n", "<meta http-equiv=\"refresh\" content=\"2\">\n"};
 
+EthernetServer ROWebServer::server(80);
+
 // clear our arrays and allocate
 ROWebServer::ROWebServer()
 {
@@ -15,7 +17,7 @@ ROWebServer::ROWebServer()
 	memset(fields, 0, 23);
 	memset(datas, 0, 23);
 
-	server = new EthernetServer(80);
+	//server = new EthernetServer(80);
 }
 
 ROWebServer::ROWebServer(int port)
@@ -27,13 +29,13 @@ ROWebServer::ROWebServer(int port)
 	memset(fields, 0, 23);
 	memset(datas, 0, 23);
 
-	server = new EthernetServer(port);
+	//server = new EthernetServer(port);
 }
 
 // simple destructor
 ROWebServer::~ROWebServer()
 {
-	delete server;
+	//delete server;
 	delete fields;
 	delete datas;
 }
@@ -52,55 +54,66 @@ int ROWebServer::add_field(const char *field, const char *data)
 
 void ROWebServer::begin_server()
 {
-	server->begin();
+	server.begin();
 }
 
 void ROWebServer::webserver_loop()
 {
-	EthernetClient client = server->available();
-	if(client)
-	{ // check if connected
-		boolean line_blank = true; // keep track if http request is done
-		while(client.connected()) // another connect check for loop
-		{
-			char c = client.read();
-			if(c == '\n' && line_blank) // blank newline, http request done
-			{
-				// send top of html page
-				for(unsigned int i = 0; i < (sizeof(http_open)/sizeof(http_open[0])); i++)
-				{
-					client.print(http_open[i]);
-				}
-				
-				// send out our data
-				for(int i = 0; fields[i] != (char*)"" && i < 23; i++)
-				{
-					client.print(fields[i]);
-					client.print(": ");
-					client.print(datas[i]);
-					client.print("</br>");
-				}
-				
-				// closing </html>
-				client.print(http_close);
-				break;
-			}
-			if(c == '\n') // Check if line is done
-			{
-				line_blank = true;
-			}
-			else // If not newline, not a blank line
-			{
-				line_blank = false;
-			}
-		}
-		client.stop(); //Disconnect from client
+	static int run_count = 0;
+	static EthernetClient client;
+	if((run_count%10) == 0)
+	{
+		client = server.available();
+		if(client)
+		{ // check if connected
+			Serial.print("client connected\n");
+			boolean line_blank = true; // keep track if http request is done
 
-		for(unsigned int i = 0; i < (sizeof(fields)/sizeof(fields[0])); i++)
-		{
-			// Clears out fields so that add_fields can be used in loop
-			fields[i] = (char*)"";
-			datas[i] = (char*)"";
+			while(client.connected()) // another connect check for loop
+			{
+				char c = client.read();
+				Serial.print(c);
+
+				if(c == '\n' && line_blank) // blank newline, http request done
+				{
+					Serial.print("Request done, sending data");
+					// send top of html page
+					for(unsigned int i = 0; i < (sizeof(http_open)/sizeof(http_open[0])); i++)
+					{
+						client.print(http_open[i]);
+					}
+					Serial.print("Send http head");
+					// send out our data
+					for(int i = 0; fields[i] != (char*)"" && i < 23; i++)
+					{
+						client.print(fields[i]);
+						client.print(": ");
+						client.print(datas[i]);
+						client.print("</br>");
+					}
+					Serial.print("Sent out data and fields");
+					// closing </html>
+					client.print(http_close);
+					Serial.print("Sent out http close");
+					break;
+				}
+				if(c == '\n') // Check if line is done
+				{
+					line_blank = true;
+				}
+				else if (c != '\r') // If not newline, not a blank line
+				{
+					line_blank = false;
+				}
+			}
+			client.stop(); //Disconnect from client
+			Serial.print("Disconnecting from client");
+			Serial.print("Fields and datas cleared");
+			delay(3);
 		}
 	}
+	memset(fields, 0, 23);
+	memset(datas, 0, 23);
+	delay(1);
+	run_count++;
 }

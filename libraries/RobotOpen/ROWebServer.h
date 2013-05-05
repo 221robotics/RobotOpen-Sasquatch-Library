@@ -27,9 +27,10 @@ class ROWebServer
 	int f_index;
 	char **fields;
 	char **datas;
-	EthernetServer *server;
+	static EthernetServer server;
 };
 
 extern const char* http_open[7];
+extern EthernetServer server;
 
 #endif
