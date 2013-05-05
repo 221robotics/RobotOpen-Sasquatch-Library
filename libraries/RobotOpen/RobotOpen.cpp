@@ -427,17 +427,17 @@ void RobotOpenClass::parsePacket() {
                     // 1st joystick
                     _joy1[i] = _packetBuffer[i+1];
                 }
-                else if (i >= 24 && i < 42) {
+                else if (i >= 24 && i < 48) {
                     // 2nd joystick
-                    _joy2[i-24] = _packetBuffer[i+25];
+                    _joy2[i-24] = _packetBuffer[i+1];
                 }
-                else if (i >= 42 && i < 60) {
+                else if (i >= 48 && i < 72) {
                     // 3rd joystick
-                    _joy3[i-42] = _packetBuffer[i+43];
+                    _joy3[i-48] = _packetBuffer[i+1];
                 }
-                else if (i >= 60 && i < 78) {
+                else if (i >= 72 && i < 96) {
                     // 4th joystick
-                    _joy4[i-60] = _packetBuffer[i+61];
+                    _joy4[i-72] = _packetBuffer[i+1];
                 }
                 else {
                     break;
