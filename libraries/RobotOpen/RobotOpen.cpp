@@ -27,6 +27,9 @@
 // The interval for publishing DS data
 #define DS_INTERVAL_MS 100
 
+// The number of milliseconds between SD card writes (faster writes will be dropped)
+#define MAX_LOGGING_TIMEOUT 250
+
 // Set the MAC address and static IP for the TCP/IP stack
 static byte mac[] = { 0xD4, 0x40, 0x39, 0xFB, 0xE0, 0x33 };
 static IPAddress ip(10, 0, 0, 22);
@@ -56,6 +59,7 @@ static boolean _enabled = false;            // Tells us if the robot is enabled 
 static unsigned long _lastPacket = 0;       // Keeps track of the last time (ms) we received data
 static unsigned long _lastTimedLoop = 0;    // Keeps track of the last time the timed loop ran
 static unsigned long _lastDSLoop = 0;       // Keeps track of the last time we published DS data
+static unsigned long _lastSDWrite = 0;      // Keeps track of the last time we wrote to the SD card
 
 // Outputs that must be controlled via enable state
 static Servo pwmChannels[16];
@@ -289,10 +293,14 @@ void RobotOpenClass::log(String data) {
 }
 
 void RobotOpenClass::logToSD(String data) {
-    logFile = SD.open("robolog.txt", FILE_WRITE);
-    if (logFile) {
-        logFile.println(data);
-        logFile.close();
+    if ((millis() - _lastSDWrite) > MAX_LOGGING_TIMEOUT) {
+        logFile = SD.open("robolog.txt", FILE_WRITE);
+        if (logFile) {
+            logFile.println(data);
+            logFile.close();
+        }
+        // update last write time
+        _lastSDWrite = millis();
     }
 }
 
