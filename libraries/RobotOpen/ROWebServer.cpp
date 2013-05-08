@@ -1,55 +1,85 @@
 #include "RobotOpen.h"
+#include <avr/wdt.h>
 #include <stdlib.h>
 
-// Initialize our http opening constant
-const char *ROWebServer::http_open[7] = {"HTTP/1.1 200 OK\n", "Content-Type: text/html\n", "Connection: close\n", "\n", \
-							   "<!DOCTYPE HTML>\n", "<html>\n", "<meta http-equiv=\"refresh\" content=\"2\">\n"};
+// Initialize our http constants
+const char *ROWebServer::http_open[7] = { "HTTP/1.1 200 OK\n",\
+										  "Content-Type: text/html\n",
+										  "Connection: close\n", "\n", \
+							   			  "<!DOCTYPE HTML>\n",\
+							   			  "<html>\n",\
+							   			  "<meta http-equiv=\"refresh\" content=\"1\">\n"};
+const char *ROWebServer::http_close = (char*)"</html>\n";
 
-EthernetServer ROWebServer::server(80);
 
 // clear our arrays and allocate
-ROWebServer::ROWebServer()
+ROWebServer::ROWebServer() : server(80)
 {
-	f_index = 0;
-	http_close = (char*)"</html>\n";
-	fields =  (char**)malloc(23);
-	datas = (char**)malloc(23);
-	memset(fields, 0, 23);
-	memset(datas, 0, 23);
+	fields =  new char*[NUM_FIELDS];
+	datas = new char*[NUM_FIELDS];
 
-	//server = new EthernetServer(80);
+	for(int i = 0; i < NUM_FIELDS; i++)
+	{
+		fields[i] =  new char[FIELD_LEN];
+		datas[i] = new char[FIELD_LEN];
+
+		strcpy(fields[i], "");
+		strcpy(datas[i] , "");
+	}
 }
 
-ROWebServer::ROWebServer(int port)
-{
-	f_index = 0;
-	http_close = (char*)"</html>\n";
-	fields =  (char**)malloc(23);
-	datas = (char**)malloc(23);
-	memset(fields, 0, 23);
-	memset(datas, 0, 23);
 
-	//server = new EthernetServer(port);
+ROWebServer::ROWebServer(int port) : server(port)
+{
+	fields =  new char*[NUM_FIELDS];
+	datas = new char*[NUM_FIELDS];
+
+	for(int i = 0; i < NUM_FIELDS; i++)
+	{
+		fields[i] =  new char[FIELD_LEN];
+		datas[i] = new char[FIELD_LEN];
+
+		strcpy(fields[i], "");
+		strcpy(datas[i] , "");
+	}
 }
 
 // simple destructor
 ROWebServer::~ROWebServer()
 {
-	//delete server;
+	for(int i = 0; i < NUM_FIELDS; i++)
+	{
+		delete fields[i];
+		delete datas[i];
+	}
 	delete fields;
 	delete datas;
 }
 
 // Add field and data, returns 1 on filled array
-int ROWebServer::add_field(const char *field, const char *data)
+int ROWebServer::add_field(const char *field, const char *data, byte line)
 {
-	if(f_index < 23)
+	if(line < 23)
 	{
-		f_index++;
-		fields[f_index] = (char*)field;
-		datas[f_index] = (char*)data;
+		strcpy(fields[line], field);
+		strcpy(datas[line], data);
+		return 0;
 	}
 	return 1;
+}
+
+int ROWebServer::add_field(const char *label, int data, byte line)
+{
+	char tmp[6];
+	sprintf(tmp, "%i", data);
+	return add_field(label, tmp, line);
+}
+
+int ROWebServer::add_field(const char *label, double data, byte line)
+{
+	char tmp[10];
+	sprintf(tmp, "%d", data);
+	return add_field(label, tmp, line);
 }
 
 void ROWebServer::begin_server()
@@ -61,7 +91,7 @@ void ROWebServer::webserver_loop()
 {
 	static int run_count = 0;
 	static EthernetClient client;
-	if((run_count%10) == 0)
+	if((run_count%35) == 0)
 	{
 		client = server.available();
 		if(client)
@@ -76,25 +106,39 @@ void ROWebServer::webserver_loop()
 
 				if(c == '\n' && line_blank) // blank newline, http request done
 				{
-					Serial.print("Request done, sending data");
+					wdt_reset();
+					Serial.print("Request done, sending data\n");
+					
 					// send top of html page
 					for(unsigned int i = 0; i < (sizeof(http_open)/sizeof(http_open[0])); i++)
 					{
 						client.print(http_open[i]);
+						wdt_reset();
 					}
-					Serial.print("Send http head");
+					Serial.print("Sent http head\n");
+					
 					// send out our data
-					for(int i = 0; fields[i] != (char*)"" && i < 23; i++)
+					for(int i = 0; i < NUM_FIELDS; i++)
 					{
-						client.print(fields[i]);
-						client.print(": ");
-						client.print(datas[i]);
-						client.print("</br>");
+						wdt_reset();
+						Serial.println(fields[i]);
+						Serial.println(datas[i]);
+						if((strlen(fields[i]) > 0 && strlen(fields[i]) < 128) && (strlen(datas[i]) > 0 && strlen(datas[i]) < 128))
+						{
+							client.print(fields[i]);
+							client.print(": ");
+							client.print(datas[i]);
+							client.print("</br>");
+							//client.print("\n");
+							wdt_reset();
+						}
 					}
-					Serial.print("Sent out data and fields");
+					Serial.print("Sent out data and fields\n");
+					
 					// closing </html>
 					client.print(http_close);
-					Serial.print("Sent out http close");
+					Serial.print("Sent out http close\n");
+					
 					break;
 				}
 				if(c == '\n') // Check if line is done
@@ -105,15 +149,11 @@ void ROWebServer::webserver_loop()
 				{
 					line_blank = false;
 				}
+				wdt_reset();
 			}
 			client.stop(); //Disconnect from client
-			Serial.print("Disconnecting from client");
-			Serial.print("Fields and datas cleared");
-			delay(3);
+			Serial.print("Disconnecting from client\n");
 		}
 	}
-	memset(fields, 0, 23);
-	memset(datas, 0, 23);
-	delay(1);
 	run_count++;
 }
