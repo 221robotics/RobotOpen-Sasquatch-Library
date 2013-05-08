@@ -1,5 +1,6 @@
 #include <RobotOpen.h>
 #include <Ethernet.h>
+#include <avr/wdt.h>
 
 #ifndef ROWebServer_h
 #define ROWebServer_h

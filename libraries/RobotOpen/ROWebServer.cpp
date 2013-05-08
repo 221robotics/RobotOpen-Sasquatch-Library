@@ -1,6 +1,4 @@
 #include "RobotOpen.h"
-#include <avr/wdt.h>
-#include <stdlib.h>
 
 // Initialize our http constants
 const char *ROWebServer::http_open[7] = { "HTTP/1.1 200 OK\n",\
@@ -91,7 +89,7 @@ void ROWebServer::webserver_loop()
 {
 	static int run_count = 0;
 	static EthernetClient client;
-	if((run_count%35) == 0)
+	if(((run_count++)%35) == 0)
 	{
 		client = server.available();
 		if(client)
@@ -155,5 +153,4 @@ void ROWebServer::webserver_loop()
 			Serial.print("Disconnecting from client\n");
 		}
 	}
-	run_count++;
 }
