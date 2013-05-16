@@ -76,7 +76,7 @@ int ROWebServer::add_field(const char *label, int data, byte line)
 int ROWebServer::add_field(const char *label, double data, byte line)
 {
 	char tmp[10];
-	sprintf(tmp, "%d", data);
+	dtostrf(data, 4, 2, tmp);
 	return add_field(label, tmp, line);
 }
 

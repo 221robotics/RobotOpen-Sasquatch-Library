@@ -29,7 +29,7 @@ void enabled() {
  * All outputs are automatically disabled (PWM, Solenoid, Digital Outs)
  */
 void disabled() {
-  serve.add_field("Analog 0", analog0.read(), 0);
+  serve.add_field("Analog 0", (5.0*(analog0.read()/1024.0))/0.01, 0);
   serve.webserver_loop();
 }
 
