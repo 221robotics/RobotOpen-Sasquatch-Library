@@ -18,6 +18,7 @@
 #include <ROStatus.h>
 #include <ROTimer.h>
 #include <ROParameter.h>
+#include <ROWebServer.h>
 #include "IPAddress.h"
 
 
