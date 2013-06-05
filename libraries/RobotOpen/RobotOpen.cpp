@@ -59,7 +59,14 @@ static unsigned long _lastDSLoop = 0;       // Keeps track of the last time we p
 
 // Outputs that must be controlled via enable state
 static Servo pwmChannels[16];
-static boolean digitalOutputChannels[22];
+static boolean digitalOutputChannels[22] = 
+{
+    false,false,false,false,false,false,
+    false,false,false,false,false,false,
+    false,false,false,false,false,false,
+    false,false,false,false
+};
+
 static ROParameter* params[100];
 static unsigned char paramsLength = 0;
 static boolean firstEnableLoop = true;
@@ -139,11 +146,6 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
 
     // setup serial for debugging
     Serial.begin(115200);
-
-    // Initialize output state tracking
-    for (int i = 0; i < 22; i++) {
-        digitalOutputChannels[i] = false;
-    }
 
     // Solenoid outputs
     for (int i = 0; i < 8; i++) {
@@ -492,6 +494,8 @@ void RobotOpenClass::writeDigital(byte channel, uint8_t state) {
             digitalWrite(47+channel, state);
         else
             digitalWrite(51+channel, state);
+        Serial.print("Pin set: ");
+        Serial.println(channel+51);
     }
 }
 
@@ -504,6 +508,8 @@ void RobotOpenClass::makeOutput(byte channel) {
         else {
             pinMode(51+channel, OUTPUT);
             digitalWrite(51+channel, LOW);
+            Serial.print("Pin Output: ");
+            Serial.println(channel+51);
         }
         digitalOutputChannels[channel] = true;
     }
