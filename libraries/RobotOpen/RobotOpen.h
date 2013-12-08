@@ -43,6 +43,9 @@ public:
     // Tells us if the robot is enabled
     static boolean enabled();
 
+    // Sets if robot will start enabled or rely on DS
+    static void enableLock(boolean lock);
+
     // How many joysticks are being received
     static int numJoysticks();
 

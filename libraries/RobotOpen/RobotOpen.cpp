@@ -56,6 +56,7 @@ static unsigned int _outgoingPacketSize = 1;
 
 // Robot specific stuff
 static boolean _enabled = false;            // Tells us if the robot is enabled or disabled
+static boolean _enable_lock = false;
 static unsigned long _lastPacket = 0;       // Keeps track of the last time (ms) we received data
 static unsigned long _lastTimedLoop = 0;    // Keeps track of the last time the timed loop ran
 static unsigned long _lastDSLoop = 0;       // Keeps track of the last time we published DS data
@@ -208,7 +209,7 @@ void RobotOpenClass::syncDS() {
     wdt_reset();
   
     // detect disconnect
-    if ((millis() - _lastPacket) > 200) {  // Disable the robot, drop the connection
+    if ((millis() - _lastPacket) > 200 && !_enable_lock) {  // Disable the robot, drop the connection
         _enabled = false;
         // NO CONNECTION -- blue LED
         digitalWrite(4, LOW);
@@ -219,7 +220,7 @@ void RobotOpenClass::syncDS() {
             firstEnableLoop = true;
         }
 	}
-    else if (_enabled == true) {
+    else if (_enabled == true || _enable_lock) {
         // ENABLED -- green LED
         digitalWrite(4, LOW);
         digitalWrite(5, HIGH);
@@ -426,6 +427,16 @@ void RobotOpenClass::parsePacket() {
               _lastPacket = millis();
               break;
 
+            case 'l': // enable lock
+              _enable_lock = true;
+              _lastPacket = millis();
+              break;
+
+            case 'u': // enable unlock
+              _enable_lock = false;
+              _lastPacket = millis();
+              break;
+
             case 'c': // control packet
               _enabled = true;
               _lastPacket = millis();
@@ -596,6 +607,10 @@ void RobotOpenClass::sendParameters() {
 
 boolean RobotOpenClass::enabled() {
     return _enabled;
+}
+
+void RobotOpenClass::enableLock(boolean lock) {
+    _enable_lock = lock;
 }
 
 int RobotOpenClass::numJoysticks() {
