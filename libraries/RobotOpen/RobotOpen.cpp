@@ -513,8 +513,6 @@ void RobotOpenClass::writeDigital(byte channel, uint8_t state) {
             digitalWrite(47+channel, state);
         else
             digitalWrite(51+channel, state);
-        Serial.print("Pin set: ");
-        Serial.println(channel+51);
     }
 }
 
@@ -527,8 +525,6 @@ void RobotOpenClass::makeOutput(byte channel) {
         else {
             pinMode(51+channel, OUTPUT);
             digitalWrite(51+channel, LOW);
-            Serial.print("Pin Output: ");
-            Serial.println(channel+51);
         }
         digitalOutputChannels[channel] = true;
     }
