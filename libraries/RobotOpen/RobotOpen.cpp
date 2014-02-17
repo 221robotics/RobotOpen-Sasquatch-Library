@@ -509,13 +509,13 @@ void RobotOpenClass::writePWM(byte channel, byte pwmVal) {
 }
 
 void RobotOpenClass::writeSolenoid(byte channel, uint8_t state) {
-    if (_enabled && channel < 8) {
+    if (channel < 8) {
         digitalWrite(39+channel, state);
     }
 }
 
 void RobotOpenClass::writeDigital(byte channel, uint8_t state) {
-    if (_enabled && channel < 22 && digitalOutputChannels[channel] == true) {
+    if (channel < 22 && digitalOutputChannels[channel] == true) {
         if (channel < 3)
             digitalWrite(47+channel, state);
         else
