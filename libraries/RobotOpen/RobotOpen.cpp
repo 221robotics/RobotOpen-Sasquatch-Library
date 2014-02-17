@@ -62,6 +62,9 @@ static unsigned long _lastTimedLoop = 0;    // Keeps track of the last time the 
 static unsigned long _lastDSLoop = 0;       // Keeps track of the last time we published DS data
 static unsigned long _lastSDWrite = 0;      // Keeps track of the last time we wrote to the SD card
 
+// milliseconds without receiving DS packet before we consider ourselves 'disconnected'
+static int connection_timeout = 200;
+
 // Outputs that must be controlled via enable state
 static Servo pwmChannels[16];
 static boolean digitalOutputChannels[22] = 
@@ -138,6 +141,10 @@ void RobotOpenClass::setIP(IPAddress newIP) {
     ip = newIP;
 }
 
+void RobotOpenClass::setTimeout(int new_timeout) {
+    connection_timeout = new_timeout;
+}
+
 
 void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabledCallback, LoopCallback *timedtasksCallback) {
     // Setup callbacks
@@ -209,7 +216,7 @@ void RobotOpenClass::syncDS() {
     wdt_reset();
   
     // detect disconnect
-    if ((millis() - _lastPacket) > 200 && !_enable_lock) {  // Disable the robot, drop the connection
+    if ((millis() - _lastPacket) > connection_timeout && !_enable_lock) {  // Disable the robot, drop the connection
         _enabled = false;
         // NO CONNECTION -- blue LED
         digitalWrite(4, LOW);
