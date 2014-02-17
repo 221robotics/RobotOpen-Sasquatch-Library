@@ -31,6 +31,9 @@ public:
     // Set the IP address that the Robot controller will have
     static void setIP(IPAddress newIP);
 
+    // Configure timeout until robot considers itself disconnected
+    static void setTimeout(int new_timeout);
+
     // Fire up the RobotOpen object and get things running
     static void begin(LoopCallback *enabledCallback, LoopCallback *disabledCallback, LoopCallback *timedtasksCallback);
     
