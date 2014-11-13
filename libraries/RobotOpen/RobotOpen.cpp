@@ -211,6 +211,19 @@ void RobotOpenClass::onDisable() {
     }
 }
 
+void RobotOpenClass::detachPWM(byte pwmChannel) {
+    if (pwmChannel >= 0 && pwmChannel < 16) {
+        pwmChannels[pwmChannel].detach();
+    }
+}
+
+void RobotOpenClass::attachPWM(byte pwmChannel) {
+    if (pwmChannel >= 0 && pwmChannel < 16) {
+        pwmChannels[pwmChannel].attach(23+pwmChannel);
+        pwmChannels[pwmChannel].write(90);
+    }
+}
+
 void RobotOpenClass::syncDS() {
     // feed watchdog
     wdt_reset();

@@ -72,6 +72,9 @@ public:
 
     static void addParameter(ROParameter* param);
 
+    static void detachPWM(byte pwmChannel);
+    static void attachPWM(byte pwmChannel);
+
 private:
     // Dumps data back to the DS
     static void publishDS();
