@@ -10,6 +10,9 @@ class ROPWM
     ROPWM(uint8_t);
 
     void write(byte);
+
+    void attach();
+    void detach();
     
   private:
     uint8_t _channel;
