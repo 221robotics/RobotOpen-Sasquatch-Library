@@ -56,7 +56,7 @@ public:
     static void logToSD(String);
 
     // Overloaded calls to publish back data
-    static boolean publish(String id, unsigned char val);
+    static boolean publish(String id, byte val);
     static boolean publish(String id, int val);
     static boolean publish(String id, long val);
     static boolean publish(String id, float val);

@@ -10,7 +10,7 @@ void RODashboardClass::debug(String data) {
     RobotOpen.log(data);
 }
 
-boolean RODashboardClass::publish(String id, unsigned char val) {
+boolean RODashboardClass::publish(String id, byte val) {
     return RobotOpen.publish(id, val);
 }
 
