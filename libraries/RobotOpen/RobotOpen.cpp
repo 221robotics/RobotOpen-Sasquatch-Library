@@ -35,6 +35,8 @@
 // Set the MAC address and static IP for the TCP/IP stack
 static byte mac[] = { 0xD4, 0x40, 0x39, 0xFB, 0xE0, 0x33 };
 static IPAddress ip(10, 0, 0, 22);
+static IPAddress gateway(10, 0, 0, 1);
+static IPAddress subnet(255, 255, 255, 0);
 
 // joystick data
 static int _total_joysticks = 0;
@@ -143,6 +145,14 @@ void RobotOpenClass::setIP(IPAddress newIP) {
     ip = newIP;
 }
 
+void RobotOpenClass::setSubnet(IPAddress newSubnet) {
+    subnet = newSubnet;
+}
+
+void RobotOpenClass::setGateway(IPAddress newGateway) {
+    gateway = newGateway;
+}
+
 void RobotOpenClass::setTimeout(int new_timeout) {
     connection_timeout = new_timeout;
 }
@@ -155,7 +165,7 @@ void RobotOpenClass::begin(LoopCallback *enabledCallback, LoopCallback *disabled
     whileTimedTasks = timedtasksCallback;
 
     // Start Ethernet, UDP, and Serial
-    Ethernet.begin(mac,ip);
+    Ethernet.begin(mac, ip, gateway, subnet);
     Udp.begin(PORT);
 
     // setup serial for debugging
